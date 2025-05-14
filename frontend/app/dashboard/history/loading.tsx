@@ -1,3 +1,5 @@
+import { Loader2Icon } from "lucide-react";
+
 export default function Loading() {
-  return null
+  return <Loader2Icon className="size-4 animate-spin" />
 }
