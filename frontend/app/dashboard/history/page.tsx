@@ -1,0 +1,196 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { FileText, Lock, CheckCircle, Clock, Search } from "lucide-react"
+import { Input } from "@/components/ui/input"
+
+interface Document {
+  id: string
+  name: string
+  type: string
+  size: number
+  uploadDate: string
+  status: string
+  hash: string | null
+}
+
+export default function HistoryPage() {
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([])
+
+  useEffect(() => {
+    // Load documents from localStorage
+    const storedDocuments = localStorage.getItem("zk-cargo-pass-documents")
+    if (storedDocuments) {
+      const parsedDocuments = JSON.parse(storedDocuments)
+      setDocuments(parsedDocuments)
+      setFilteredDocuments(parsedDocuments)
+    }
+  }, [])
+
+  useEffect(() => {
+    // Filter documents based on search term
+    if (searchTerm.trim() === "") {
+      setFilteredDocuments(documents)
+    } else {
+      const filtered = documents.filter(
+        (doc) =>
+          doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          doc.hash?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          doc.status.toLowerCase().includes(searchTerm.toLowerCase()),
+      )
+      setFilteredDocuments(filtered)
+    }
+  }, [searchTerm, documents])
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "verified":
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case "pending":
+        return <Clock className="h-4 w-4 text-yellow-500" />
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />
+    }
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "verified":
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Verified</Badge>
+      case "pending":
+        return (
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+            Pending
+          </Badge>
+        )
+      default:
+        return <Badge variant="outline">Unknown</Badge>
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Submission History</h1>
+        <p className="text-gray-500">View and track all your document submissions</p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Document History</CardTitle>
+          <CardDescription>All your uploaded documents and their verification status</CardDescription>
+          <div className="mt-4 relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search by document name, hash, or status..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {filteredDocuments.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Document</TableHead>
+                  <TableHead>Upload Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Hash / ZK Proof</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredDocuments.map((doc) => (
+                  <TableRow key={doc.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-gray-500" />
+                        <span className="font-medium">{doc.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(doc.uploadDate).toLocaleDateString()} {new Date(doc.uploadDate).toLocaleTimeString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(doc.status)}
+                        {getStatusBadge(doc.status)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {doc.hash ? (
+                        <div className="flex items-center gap-2">
+                          <Lock className="h-4 w-4 text-green-600" />
+                          <code className="text-xs bg-gray-100 p-1 rounded">
+                            {doc.hash.substring(0, 8)}...{doc.hash.substring(doc.hash.length - 6)}
+                          </code>
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 text-sm">Not generated</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-4">
+                <FileText className="h-6 w-6 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium">No documents found</h3>
+              <p className="text-gray-500 mt-2">
+                {documents.length === 0
+                  ? "You haven't uploaded any documents yet."
+                  : "No documents match your search criteria."}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Blockchain Verification</CardTitle>
+          <CardDescription>How to verify your documents on the blockchain</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4 text-sm">
+            <p>
+              All document proofs are stored on the Ethereum blockchain for secure, immutable verification. Customs
+              officials can verify the authenticity of your documents without accessing sensitive information.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="p-4 bg-gray-50 rounded-md">
+                <h3 className="font-medium flex items-center gap-2 mb-2">
+                  <Lock className="h-4 w-4 text-green-600" />
+                  For Importers
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Share the document hash with customs officials for verification. Your sensitive business data remains
+                  private and protected.
+                </p>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-md">
+                <h3 className="font-medium flex items-center gap-2 mb-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  For Customs Officials
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Verify document authenticity by checking the hash against the blockchain record. No need to access or
+                  store sensitive business information.
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
