@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { FileText, Upload, AlertCircle, CheckCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
+import Loading from "../history/loading"
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null)
@@ -165,7 +166,7 @@ export default function UploadPage() {
           >
             {uploading ? (
               <>
-                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                <Loading />
                 Uploading...
               </>
             ) : (

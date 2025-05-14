@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { SidebarProvider } from "@/components/ui/sidebar"
+import Loading from "./history/loading"
 
 export default function DashboardLayout({
   children,
@@ -31,9 +32,7 @@ export default function DashboardLayout({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600"></div>
-      </div>
+      <Loading />
     )
   }
 
