@@ -1,11 +1,11 @@
 // Circuit to verify if the sum of individual values of all items is equal to the total amount declared
-fn main(unity_value: Field, quantity: Field, total_declared_value: Field) {
+fn main(unity_value: u64, quantity: u64, total_declared_value: u64) {
     // Calculate the sum of item values
-    let sum: Field = unity_value * quantity;
+    let sum: u64 = unity_value * quantity;
 
     // Check if the sum is equal to the total declared
     // Allowing a tiny error margin of 1 cent due to truncation
-    let difference: Field = if sum > total_declared_value { sum - total_declared_value } else { total_declared_value - sum };
+    let difference: u64 = if sum > total_declared_value { sum - total_declared_value } else { total_declared_value - sum };
 
     assert(difference <= 1);
 }

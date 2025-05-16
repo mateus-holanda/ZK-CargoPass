@@ -1,13 +1,13 @@
 // Circuit to verify if the issue date is valid
-fn main(issue_date: Field, current_date: pub Field, max_days_diff: pub Field) {
+fn main(issue_date: u16, current_date: pub u16, max_days_diff: pub u16) {
     // Issue date must be in the past
     let is_issue_date_in_past: bool = issue_date <= current_date;
 
     // Issue date must not be older than a certain number of days
-    let days_diff: u16 = (current_date - issue_date) as u16;
+    let days_diff: u16 = current_date - issue_date;
     let is_issue_date_recent: bool = days_diff <= max_days_diff;
 
-    let is_issue_date_valid: bool = is_issue_date_in_past && is_issue_date_recent;
+    let is_issue_date_valid: bool = is_issue_date_in_past & is_issue_date_recent;
 
     assert(is_issue_date_valid);
 }

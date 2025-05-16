@@ -1,8 +1,8 @@
 // Circuit to verify if the amount paid in taxes is the right percentage of the total amount declared
-fn main(total_declared_value: Field, amount_paid: Field, tax_percentage: pub Field) {
+fn main(total_declared_value: u64, amount_paid: u64, tax_percentage: pub u64) {
     // Calculate the minimum amount of taxes to be paid 
     // To avoid divisions the amount paid is multiplied by 100
-    let amount_to_pay: Field = total_declared_value * tax_percentage;
+    let amount_to_pay: u64 = total_declared_value * tax_percentage;
 
     assert(amount_paid * 100 >= amount_to_pay);
 }
