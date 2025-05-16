@@ -65,7 +65,7 @@ Atualmente, cargas permanecem paradas por longos períodos em contêineres, leva
 
 7. **Acesse a aplicação:**
 
-- Abra o navegador e acesse `http://localhost:3000` para utilizar o aplicativo.
+- Abra o navegador e acesse `http://localhost:3001` para utilizar o aplicativo.
 
 ## Observações
 

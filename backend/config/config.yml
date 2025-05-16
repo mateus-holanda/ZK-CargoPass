@@ -1,0 +1,25 @@
+port: 3000
+env: ${NODE_ENV}
+
+ui:
+  baseUrl: ${UI_BASE_URL}
+
+auth:
+  secret: ${AUTH_SECRET}
+  sessionLength: 2592000 # expires after a month
+  accessToken:
+    duration: 30m
+  refreshToken:
+    duration: 30d
+  cookie:
+    httpOnly: true
+    sameSite: lax
+    maxAge: 2592000000 # expires after a month
+
+redis:
+  url: ${REDIS_URL}
+
+grant:
+  defaults:
+    origin: ${UI_BASE_URL}
+    transport: 'session'
