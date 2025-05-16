@@ -15,11 +15,13 @@ import { useToast } from "@/hooks/use-toast"
 interface Document {
   id: string
   name: string
+  status: string
   type: string
   size: number
-  uploadDate: string
-  status: string
-  hash: string | null
+  data: any
+  createdAt: string
+  deletedAt: string | null
+  userId: string
 }
 
 export default function ValidatePage() {
@@ -53,7 +55,7 @@ export default function ValidatePage() {
     setTimeout(() => {
       // Find document with matching hash
       const foundDocument = documents.find(
-        (doc) => doc.hash && doc.hash.toLowerCase().includes(searchHash.toLowerCase()),
+        (doc) => doc.id && doc.id.toLowerCase().includes(searchHash.toLowerCase()),
       )
 
       if (foundDocument) {
@@ -180,7 +182,7 @@ export default function ValidatePage() {
                     <div>
                       <p className="font-medium">{searchResult.name}</p>
                       <p className="text-xs text-gray-500">
-                        Uploaded on {new Date(searchResult.uploadDate).toLocaleDateString()}
+                        Uploaded on {new Date(searchResult.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -208,7 +210,7 @@ export default function ValidatePage() {
                     <div>
                       <p className="text-gray-500">Hash</p>
                       <code className="text-xs bg-gray-100 p-1 rounded block mt-1 overflow-hidden text-ellipsis">
-                        {searchResult.hash}
+                        {searchResult.id}
                       </code>
                     </div>
                   </div>
@@ -236,7 +238,7 @@ export default function ValidatePage() {
           <CardDescription>Recently processed documents that may need validation</CardDescription>
         </CardHeader>
         <CardContent>
-          {documents.filter((doc) => doc.hash).length > 0 ? (
+          {documents.filter((doc) => doc.id).length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -248,7 +250,7 @@ export default function ValidatePage() {
               </TableHeader>
               <TableBody>
                 {documents
-                  .filter((doc) => doc.hash) // Only show documents with a hash
+                  .filter((doc) => doc.id) // Only show documents with a hash
                   .slice(0, 5) // Show only the 5 most recent
                   .map((doc) => (
                     <TableRow key={doc.id}>
@@ -258,7 +260,7 @@ export default function ValidatePage() {
                           <span className="font-medium">{doc.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{new Date(doc.uploadDate).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(doc.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <Badge
                           className={
