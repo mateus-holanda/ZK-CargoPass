@@ -19,9 +19,8 @@ export function DashboardSidebar() {
   const router = useRouter()
 
   const handleLogout = () => {
-    localStorage.removeItem("zk-cargo-pass-auth")
-    localStorage.removeItem("zk-cargo-pass-user")
-    router.push("/login")
+    localStorage.clear()
+    router.push("/")
   }
 
   const menuItems = [
