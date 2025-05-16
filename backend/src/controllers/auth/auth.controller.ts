@@ -1,14 +1,13 @@
-import { Body, Controller, HttpStatus, Post } from '@nestjs/common'
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
-import { Request } from 'express'
-import session from 'express-session'
-
-import { LoginCredentialsDto } from '../../dtos/auth/login-credentials.dto'
-import { SessionEntity } from '../../entities/session.entity'
-import { AuthService } from '../../services/auth/auth.service'
-import { AuthLogin } from '../../services/auth/decorators/auth-login.decorator'
-import { AuthLogout } from '../../services/auth/decorators/auth-logout.decorator'
-import { AuthSession } from '../../services/auth/decorators/auth-session.decorator'
+import { Body, Controller, HttpStatus, Post } from "@nestjs/common"
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger"
+import { Request } from "express"
+import session from "express-session"
+import { LoginCredentialsDto } from "../../dtos/auth/login-credentials.dto"
+import { SessionEntity } from "../../entities/session.entity"
+import { AuthService } from "../../services/auth/auth.service"
+import { AuthLogin } from "../../services/auth/decorators/auth-login.decorator"
+import { AuthLogout } from "../../services/auth/decorators/auth-logout.decorator"
+import { AuthSession } from "../../services/auth/decorators/auth-session.decorator"
 
 export interface RequestWithSession extends Request {
   session: session.Session & { passport: { user: Record<string, unknown> } }

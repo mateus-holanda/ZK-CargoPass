@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common"
 import { SignUpDto } from "../../dtos/user/sign-up.dto"
 import { UserEntity } from "../../entities/user.entity"
 import { PrismaService } from "../../services/prisma/prisma.service"
-import { encryptSHA256 } from "../../utils/encryption"
+import { encryptMD5, encryptSHA256 } from "../../utils/encryption"
 
 @Injectable()
 export class UserService {
@@ -15,7 +15,7 @@ export class UserService {
     let user = await this.getUserByEmail(data.email)
 
     // Converts a raw password to an encrypted one and insert it in the database
-    const password = this.encryptPassword(data.password)
+    const { password, salt } = this.encryptPassword(data.password)
 
     // If user doesn't exist, create the new user
     if (!user) {
@@ -24,6 +24,7 @@ export class UserService {
           name: data.name,
           email: data.email,
           password,
+          salt,
         },
       })
     }
@@ -42,6 +43,9 @@ export class UserService {
   }
 
   private encryptPassword(rawPassword: string) {
-    return encryptSHA256(rawPassword)
+    const salt = encryptMD5(`salt-${Math.random()}-${Date.now()}`)
+    const password = encryptSHA256(rawPassword, salt)
+
+    return { salt, password }
   }
 }

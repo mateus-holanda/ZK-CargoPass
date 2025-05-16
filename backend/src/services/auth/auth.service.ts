@@ -24,9 +24,9 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials')
     }
 
-    const sessionRole = (user.role !== 'user' ? SessionRole.SUPER_ADMIN : SessionRole.USER) as SessionRole
+    const sessionRole = user.role as SessionRole
 
-    const encryptedPassword = encryptSHA256(password)
+    const encryptedPassword = encryptSHA256(password, user.salt)
     const scopes = ScopesByRole[sessionRole] ?? []
     if (user.password !== encryptedPassword || !scopes.includes(Scopes.AUTH_LOG_IN)) {
       throw new UnauthorizedException('Invalid credentials')
@@ -43,7 +43,7 @@ export class AuthService {
       throw new UnauthorizedException('User does not exist')
     }
 
-    const sessionRole = (user.role !== 'user' ? SessionRole.SUPER_ADMIN : SessionRole.USER) as SessionRole
+    const sessionRole = user.role as SessionRole
 
     const scopes = ScopesByRole[sessionRole] ?? []
 

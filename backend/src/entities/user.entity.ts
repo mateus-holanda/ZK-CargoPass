@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger"
-import { User } from "@prisma/client"
+import { User, UserRole } from "@prisma/client"
 import { Exclude } from "class-transformer"
-import { IsDate, IsEmail, IsNotEmpty, IsString } from "class-validator"
+import { IsDate, IsEmail, IsEnum, IsNotEmpty, IsString } from "class-validator"
 
 export class UserEntity implements User {
   constructor(partial: Partial<UserEntity>) {
@@ -26,10 +26,13 @@ export class UserEntity implements User {
   @Exclude()
   password: string
 
+  @Exclude()
+  salt: string
+
   @ApiProperty()
   @IsNotEmpty()
-  @IsString()
-  role: string
+  @IsEnum(UserRole)
+  role: UserRole
 
   @ApiProperty()
   @IsDate()

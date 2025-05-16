@@ -3,8 +3,9 @@ import { IsEnum } from "class-validator"
 import { UserEntity } from "./user.entity"
 
 export enum SessionRole {
-  USER = 'USER',
-  SUPER_ADMIN = 'SUPER_ADMIN',
+  ADMIN = 'ADMIN',
+  CUSTOM = 'CUSTOM',
+  IMPORTER = 'IMPORTER',
 }
 
 export class SessionEntity {

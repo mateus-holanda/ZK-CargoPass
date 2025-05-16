@@ -17,7 +17,8 @@ model User {
   name      String
   email     String    @unique
   password  String
-  role      String    @default("user")
+  salt      String
+  role      UserRole  @default(CUSTOMS)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -37,4 +38,10 @@ model Document {
   deletedAt DateTime?
 
   user User @relation(fields: [userId], references: [id])
+}
+
+enum UserRole {
+  ADMIN
+  CUSTOMS
+  IMPORTER
 }

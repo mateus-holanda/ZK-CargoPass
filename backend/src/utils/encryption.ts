@@ -1,8 +1,8 @@
-import crypto from 'crypto'
+import crypto from "crypto"
 
-const getKeyIV = (secret: string) => {
+const getKeyIV = (secret: string, salt: string) => {
   const result = crypto
-    .createHmac('sha256', Buffer.from(`${secret}`))
+    .createHmac('sha256', Buffer.from(`${secret}${salt}`))
     .update('json')
     .digest('hex')
     .substring(0, 48)
@@ -12,15 +12,16 @@ const getKeyIV = (secret: string) => {
 }
 
 export const encrypt = (text: string, secret: string) => {
-  const { key, iv } = getKeyIV(secret)
+  const salt = crypto.randomBytes(16).toString('hex')
+  const { key, iv } = getKeyIV(secret, salt)
   const cipher = crypto.createCipheriv('aes-256-cbc', key, iv)
   const encryptedData = Buffer.concat([cipher.update(text), cipher.final()]).toString('hex')
-  return { encryptedData }
+  return { salt, encryptedData }
 }
 
-export const decrypt = (text: string, secret: string) => {
+export const decrypt = (text: string, secret: string, salt: string) => {
   try {
-    const { key, iv } = getKeyIV(secret)
+    const { key, iv } = getKeyIV(secret, salt)
     const encryptedText = Buffer.from(text, 'hex')
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
     const decrypted = decipher.update(encryptedText)
@@ -32,5 +33,5 @@ export const decrypt = (text: string, secret: string) => {
 
 export const encryptMD5 = (text: string) => crypto.createHash('md5').update(text).digest('hex')
 
-export const encryptSHA256 = (text: string) =>
-  crypto.createHmac('sha256', text).digest('hex')
+export const encryptSHA256 = (text: string, salt: string) =>
+  crypto.createHmac('sha256', salt).update(text).digest('hex')

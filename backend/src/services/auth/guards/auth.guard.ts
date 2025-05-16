@@ -1,12 +1,11 @@
-import { ExecutionContext, Injectable } from '@nestjs/common'
-import { Reflector } from '@nestjs/core'
-import { AuthGuard as PassportAuthGuard } from '@nestjs/passport'
-
-import { SESSION_KEY_NAME } from '../../../middlewares/auth.middleware'
-import { IS_LOGOUT } from '../decorators/auth-logout.decorator'
-import { IS_PUBLIC } from '../decorators/public.decorator'
-import { SCOPES_KEY } from '../decorators/with-scopes.decorator'
-import { Scopes } from '../permissions'
+import { ExecutionContext, Injectable } from "@nestjs/common"
+import { Reflector } from "@nestjs/core"
+import { AuthGuard as PassportAuthGuard } from "@nestjs/passport"
+import { SESSION_KEY_NAME } from "../../../middlewares/auth.middleware"
+import { IS_LOGOUT } from "../decorators/auth-logout.decorator"
+import { IS_PUBLIC } from "../decorators/public.decorator"
+import { SCOPES_KEY } from "../decorators/with-scopes.decorator"
+import { Scopes } from "../permissions"
 
 @Injectable()
 export class AuthGuard extends PassportAuthGuard(['local']) {

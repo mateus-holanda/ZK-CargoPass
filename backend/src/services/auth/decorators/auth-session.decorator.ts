@@ -1,7 +1,6 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common'
-import { Request } from 'express'
-
-import { SessionEntity } from '../../../entities/session.entity'
+import { createParamDecorator, ExecutionContext } from "@nestjs/common"
+import { Request } from "express"
+import { SessionEntity } from "../../../entities/session.entity"
 
 export const AuthSession = createParamDecorator(
   (data: keyof SessionEntity, context: ExecutionContext) => {
