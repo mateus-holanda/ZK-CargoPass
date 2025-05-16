@@ -68,16 +68,32 @@ export default function UploadPage() {
       stats.pendingSubmissions += 1
       localStorage.setItem("zk-cargo-pass-stats", JSON.stringify(stats))
 
-      // Store the document in localStorage
       const documents = JSON.parse(localStorage.getItem("zk-cargo-pass-documents") || "[]")
       documents.push({
         id: Date.now().toString(),
         name: file.name,
+        status: "pending",
         type: file.type,
         size: file.size,
-        uploadDate: new Date().toISOString(),
-        status: "pending",
-        hash: null,
+        data: { "di_number": "20/1234567-8",
+                "registration_date": "2025-05-15",
+                "customs_clearance_date": "2025-05-20",
+              "financial": {
+                "total_declared_value_usd": 150000,
+                "incoterm": "CIF",
+                "exchange_rate": 5.12,
+                "taxes": {
+                  "ii": 15000,
+                  "ipi": 5000,
+                  "pis": 1200,
+                  "cofins": 550,
+                  "icms": 13000
+                },
+              },
+            },
+        createdAt: new Date().toISOString(),
+        deletedAt: null,
+        userId: localStorage.getItem("zk-cargo-pass-user-id") || "",
       })
       localStorage.setItem("zk-cargo-pass-documents", JSON.stringify(documents))
 
@@ -94,7 +110,7 @@ export default function UploadPage() {
         if (fileInputRef.current) {
           fileInputRef.current.value = ""
         }
-      }, 3000)
+      }, 5000)
     } catch (err) {
       setError("An error occurred while uploading the file")
       console.error(err)
@@ -132,11 +148,12 @@ export default function UploadPage() {
             </Alert>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-2 hover:bg-gray-50 rounded-md p-2">
             <Label htmlFor="file">Select File</Label>
             <Input
               id="file"
               type="file"
+              className="cursor-pointer"
               ref={fileInputRef}
               onChange={handleFileChange}
               accept=".xml,.pdf,.json"

@@ -10,11 +10,13 @@ import { Input } from "@/components/ui/input"
 interface Document {
   id: string
   name: string
+  status: string
   type: string
   size: number
-  uploadDate: string
-  status: string
-  hash: string | null
+  data: any
+  createdAt: string
+  deletedAt: string | null
+  userId: string
 }
 
 export default function HistoryPage() {
@@ -39,8 +41,8 @@ export default function HistoryPage() {
     } else {
       const filtered = documents.filter(
         (doc) =>
+          doc.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          doc.hash?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           doc.status.toLowerCase().includes(searchTerm.toLowerCase()),
       )
       setFilteredDocuments(filtered)
@@ -115,7 +117,7 @@ export default function HistoryPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {new Date(doc.uploadDate).toLocaleDateString()} {new Date(doc.uploadDate).toLocaleTimeString()}
+                      {new Date(doc.createdAt).toLocaleDateString()} {new Date(doc.createdAt).toLocaleTimeString()}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -124,11 +126,11 @@ export default function HistoryPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {doc.hash ? (
+                      {doc.id ? (
                         <div className="flex items-center gap-2">
                           <Lock className="h-4 w-4 text-green-600" />
                           <code className="text-xs bg-gray-100 p-1 rounded">
-                            {doc.hash.substring(0, 8)}...{doc.hash.substring(doc.hash.length - 6)}
+                            {doc.id.substring(0, 8)}...{doc.id.substring(doc.id.length - 6)}
                           </code>
                         </div>
                       ) : (

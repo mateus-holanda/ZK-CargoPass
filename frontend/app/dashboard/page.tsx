@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileText, Lock, CheckCircle, Clock } from "lucide-react"
+import enUS from '../i18n/locales/en-US.json';
+import ptBR from '../i18n/locales/pt-BR.json';
 
 export default function DashboardPage() {
   const [username, setUsername] = useState("")
@@ -12,6 +14,8 @@ export default function DashboardPage() {
     validatedSubmissions: 0,
     pendingSubmissions: 0,
   })
+  const [language, setLanguage] = useState(localStorage.getItem("zk-cargo-pass-language") || "en-US");
+  const translations = language === 'en-US' ? enUS : ptBR;
 
   useEffect(() => {
     // Get user from localStorage
@@ -27,58 +31,59 @@ export default function DashboardPage() {
     }
   }, [])
 
+  useEffect(() => {
+    localStorage.setItem("zk-cargo-pass-language", language)
+  }, [language])
+
   return (
     <div className="space-y-6">
+      <div className="flex justify-end p-4">
+        <button onClick={() => setLanguage('en-US')} className={`px-4 py-2 ${language === 'en-US' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>EN</button>
+        <button onClick={() => setLanguage('pt-BR')} className={`px-4 py-2 ${language === 'pt-BR' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>PT</button>
+      </div>
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-gray-500">Welcome back, {username || "User"}!</p>
+        <h1 className="text-3xl font-bold tracking-tight">{translations.dashboardTitle}</h1>
+        <p className="text-gray-500">{translations.welcomeBack}, {username || translations.user}!</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Documents Uploaded</CardTitle>
+            <CardTitle className="text-sm font-medium">{translations.documentsUploaded}</CardTitle>
             <FileText className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.documentsUploaded}</div>
-            {/* <p className="text-xs text-gray-500">+{Math.floor(Math.random() * 5)} from last week</p> */}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">ZK Proofs Generated</CardTitle>
+            <CardTitle className="text-sm font-medium">{translations.zkProofsGenerated}</CardTitle>
             <Lock className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.zkProofsGenerated}</div>
-            {/* <p className="text-xs text-gray-500">+{Math.floor(Math.random() * 5)} from last week</p> */}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium mr-2">Validated Submissions</CardTitle>
+            <CardTitle className="text-sm font-medium mr-2">{translations.validatedSubmissions}</CardTitle>
             <CheckCircle className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.validatedSubmissions}</div>
-            {/* <p className="text-xs text-gray-500">+{Math.floor(Math.random() * 3)} from last week</p> */}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Submissions</CardTitle>
+            <CardTitle className="text-sm font-medium">{translations.pendingSubmissions}</CardTitle>
             <Clock className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.pendingSubmissions}</div>
-            {/* <p className="text-xs text-gray-500">
-              {Math.random() > 0.5 ? "+" : "-"}
-              {Math.floor(Math.random() * 2)} from last week
-            </p> */}
           </CardContent>
         </Card>
       </div>
@@ -86,8 +91,8 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Your recent actions in the system</CardDescription>
+            <CardTitle>{translations.recentActivity}</CardTitle>
+            <CardDescription>{translations.recentActions}</CardDescription>
           </CardHeader>
           <CardContent>
             {stats.documentsUploaded + stats.zkProofsGenerated > 0 ? (
@@ -98,8 +103,8 @@ export default function DashboardPage() {
                       <FileText className="h-4 w-4 text-gray-500" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">Document uploaded</p>
-                      <p className="text-xs text-gray-500">Today at {new Date().toLocaleTimeString()}</p>
+                      <p className="text-sm font-medium">{translations.documentUploaded}</p>
+                      <p className="text-xs text-gray-500">{translations.todayAt} {new Date().toLocaleTimeString()}</p>
                     </div>
                   </div>
                 )}
@@ -109,22 +114,22 @@ export default function DashboardPage() {
                       <Lock className="h-4 w-4 text-gray-500" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">ZK Proof generated</p>
-                      <p className="text-xs text-gray-500">Today at {new Date().toLocaleTimeString()}</p>
+                      <p className="text-sm font-medium">{translations.zkProofGenerated}</p>
+                      <p className="text-xs text-gray-500">{translations.todayAt} {new Date().toLocaleTimeString()}</p>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No recent activity to display</p>
+              <p className="text-sm text-gray-500">{translations.noRecentActivity}</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common tasks you can perform</CardDescription>
+            <CardTitle>{translations.quickActions}</CardTitle>
+            <CardDescription>{translations.commonTasks}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
@@ -133,28 +138,28 @@ export default function DashboardPage() {
                 onClick={() => (window.location.href = "/dashboard/upload")}
               >
                 <FileText className="h-6 w-6 text-green-600 mb-2" />
-                <span className="text-sm font-medium text-center">Upload Document</span>
+                <span className="text-sm font-medium text-center">{translations.uploadDocument}</span>
               </div>
               <div
                 className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
                 onClick={() => (window.location.href = "/dashboard/generate-zkp")}
               >
                 <Lock className="h-6 w-6 text-green-600 mb-2" />
-                <span className="text-sm font-medium text-center">Generate ZKP</span>
+                <span className="text-sm font-medium text-center">{translations.generateZKP}</span>
               </div>
               <div
                 className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
                 onClick={() => (window.location.href = "/dashboard/history")}
               >
                 <Clock className="h-6 w-6 text-green-600 mb-2" />
-                <span className="text-sm font-medium text-center">View History</span>
+                <span className="text-sm font-medium text-center">{translations.viewHistory}</span>
               </div>
               <div
                 className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
                 onClick={() => (window.location.href = "/dashboard/validate")}
               >
                 <CheckCircle className="h-6 w-6 text-green-600 mb-2" />
-                <span className="text-sm font-medium text-center">Validate Submission</span>
+                <span className="text-sm font-medium text-center">{translations.validateSubmission}</span>
               </div>
             </div>
           </CardContent>

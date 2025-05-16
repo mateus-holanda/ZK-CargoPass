@@ -19,9 +19,8 @@ export function DashboardSidebar() {
   const router = useRouter()
 
   const handleLogout = () => {
-    localStorage.removeItem("zk-cargo-pass-auth")
-    localStorage.removeItem("zk-cargo-pass-user")
-    router.push("/login")
+    localStorage.clear()
+    router.push("/")
   }
 
   const menuItems = [
@@ -62,7 +61,7 @@ export function DashboardSidebar() {
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-2 py-2">
           <img src="/images/logo.png" alt="zkCargoPass Logo" className="h-8 w-auto" />
-          <div className="font-bold text-lg">zkCargoPass</div>
+          <div className="font-bold text-lg text-[#3C3FB4]">zkCargoPass</div>
         </div>
         <SidebarTrigger className="absolute right-2 top-3 md:hidden" />
       </SidebarHeader>
