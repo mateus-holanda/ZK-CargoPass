@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, unlink } from 'fs/promises';
-import { join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import { OpenAI } from '@langchain/openai';
+import { PromptTemplate } from '@langchain/core/prompts';
 import axios from 'axios';
-import pdfParse from 'pdf-parse';
 
 const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB in bytes
 
@@ -11,6 +9,31 @@ interface DocumentAnalysis {
   di_number: string;
   registration_date: string;
   customs_clearance_date: string;
+  importer: {
+    cnpj: string;
+    company_name: string;
+    address: string;
+  };
+  shipper: {
+    name: string;
+    country: string;
+  };
+  cargo: {
+    description: string;
+    gross_weight_kg: number;
+    net_weight_kg: number;
+    volume_m3: number;
+    packages: number;
+    packaging_type: string;
+  };
+  transport: {
+    modality: string;
+    vessel_name: string;
+    bill_of_lading: string;
+    container_numbers: string[];
+    port_of_loading: string;
+    port_of_discharge: string;
+  };
   financial: {
     total_declared_value_usd: number;
     incoterm: string;
@@ -23,96 +46,206 @@ interface DocumentAnalysis {
       icms: number;
     };
   };
+  ncm_codes: {
+    ncm: string;
+    description: string;
+    quantity: number;
+    unit: string;
+    unit_value_usd: number;
+  }[];
+  documents: {
+    type: string;
+    number: string;
+    date: string;
+    issuer?: string;
+  }[];
+  status: string;
+  observations?: string;
+  raw_text?: string;
 }
 
-async function extractDataFromPDF(buffer: Buffer): Promise<string> {
-  try {
-    const data = await pdfParse(buffer);
-    return data.text;
-  } catch (error) {
-    console.error('Error parsing PDF:', error);
-    throw new Error('Failed to parse PDF document');
-  }
-}
+const DEFAULT_ANALYSIS: DocumentAnalysis = {
+  di_number: "N/A",
+  registration_date: "N/A",
+  customs_clearance_date: "N/A",
+  importer: {
+    cnpj: "N/A",
+    company_name: "N/A",
+    address: "N/A"
+  },
+  shipper: {
+    name: "N/A",
+    country: "N/A"
+  },
+  cargo: {
+    description: "N/A",
+    gross_weight_kg: 0,
+    net_weight_kg: 0,
+    volume_m3: 0,
+    packages: 0,
+    packaging_type: "N/A"
+  },
+  transport: {
+    modality: "N/A",
+    vessel_name: "N/A",
+    bill_of_lading: "N/A",
+    container_numbers: [],
+    port_of_loading: "N/A",
+    port_of_discharge: "N/A"
+  },
+  financial: {
+    total_declared_value_usd: 0,
+    incoterm: "N/A",
+    exchange_rate: 0,
+    taxes: {
+      ii: 0,
+      ipi: 0,
+      pis: 0,
+      cofins: 0,
+      icms: 0
+    }
+  },
+  ncm_codes: [],
+  documents: [],
+  status: "Pendente"
+};
 
-async function analyzeWithExternalAPI(text: string): Promise<DocumentAnalysis> {
+async function analyzeWithAI(text: string): Promise<DocumentAnalysis> {
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/document/analyze`, {
-      document_text: text,
-      document_type: 'DI',
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Id': localStorage.getItem('zk-cargo-pass-user-id') || '',
-      },
+    const openai = new OpenAI({
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      modelName: "gpt-4o-mini",
     });
 
-    return response.data;
+    const promptTemplate = new PromptTemplate({
+      template: `Analyze the following customs declaration document text and extract relevant information. 
+      If any information is not found, use "N/A" for text fields and 0 for numeric fields.
+      The document may be in Portuguese or English.
+      
+      Document text:
+      {text}
+      
+      Extract the information in the following JSON format:
+      {
+        "di_number": string,
+        "registration_date": string (YYYY-MM-DD),
+        "customs_clearance_date": string (YYYY-MM-DD),
+        "importer": {
+          "cnpj": string,
+          "company_name": string,
+          "address": string
+        },
+        "shipper": {
+          "name": string,
+          "country": string
+        },
+        "cargo": {
+          "description": string,
+          "gross_weight_kg": number,
+          "net_weight_kg": number,
+          "volume_m3": number,
+          "packages": number,
+          "packaging_type": string
+        },
+        "transport": {
+          "modality": string,
+          "vessel_name": string,
+          "bill_of_lading": string,
+          "container_numbers": string[],
+          "port_of_loading": string,
+          "port_of_discharge": string
+        },
+        "financial": {
+          "total_declared_value_usd": number,
+          "incoterm": string,
+          "exchange_rate": number,
+          "taxes": {
+            "ii": number,
+            "ipi": number,
+            "pis": number,
+            "cofins": number,
+            "icms": number
+          }
+        },
+        "ncm_codes": [
+          {
+            "ncm": string,
+            "description": string,
+            "quantity": number,
+            "unit": string,
+            "unit_value_usd": number
+          }
+        ],
+        "documents": [
+          {
+            "type": string,
+            "number": string,
+            "date": string,
+            "issuer": string
+          }
+        ],
+        "status": string,
+        "observations": string
+      }`,
+      inputVariables: ["text"],
+    });
+
+    const formattedPrompt = await promptTemplate.format({ text });
+    const response = await openai.invoke(formattedPrompt);
+    
+    try {
+      const analysis = JSON.parse(response);
+      return {
+        ...DEFAULT_ANALYSIS,
+        ...analysis,
+        raw_text: text
+      };
+    } catch (error) {
+      console.error('Error parsing AI response:', error);
+      return {
+        ...DEFAULT_ANALYSIS,
+        raw_text: text
+      };
+    }
   } catch (error) {
-    console.error('Error calling external API:', error);
-    throw new Error('Failed to analyze document with external service');
+    console.error('Error calling OpenAI:', error);
+    return {
+      ...DEFAULT_ANALYSIS,
+      raw_text: text
+    };
   }
 }
 
 export async function POST(request: NextRequest) {
-  let tempFilePath: string | null = null;
-
   try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const file = await request.json();
 
-    if (!file) {
+    if (!file.data) {
       return NextResponse.json(
-        { error: 'No file uploaded' },
+        { error: 'No data provided' },
         { status: 400 }
       );
     }
 
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: 'File size exceeds 3MB limit' },
-        { status: 400 }
-      );
-    }
+    const analysis = await analyzeWithAI(file.data);
 
-    // Validate file type
-    if (!file.type.includes('pdf')) {
-      return NextResponse.json(
-        { error: 'Only PDF files are allowed' },
-        { status: 400 }
-      );
-    }
+    file.data = analysis;
 
-    // Create a unique filename and save the file
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const filename = `${uuidv4()}.pdf`;
-    const uploadDir = join(process.cwd(), 'tmp');
-    tempFilePath = join(uploadDir, filename);
-    await writeFile(tempFilePath, buffer);
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/document/upload`, file, {
+      headers: {  
+        'Content-Type': 'application/json',
+      }
+    })
 
-    // Extract text from PDF
-    const extractedText = await extractDataFromPDF(buffer);
-
-    // Analyze with external API
-    const analysis = await analyzeWithExternalAPI(extractedText);
+    console.log(response)
 
     return NextResponse.json(analysis);
+
   } catch (error) {
-    console.error('Error processing document:', error);
+    console.error('Error in API route:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error processing document' },
+      { error: 'Server error: ' + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
-  } finally {
-    // Clean up temporary file
-    if (tempFilePath) {
-      try {
-        await unlink(tempFilePath);
-      } catch (error) {
-        console.error('Error deleting temporary file:', error);
-      }
-    }
   }
 } 

@@ -32,12 +32,10 @@ export default function GenerateZKPPage() {
   const { toast } = useToast()
 
   useEffect(() => {
-    // Load documents from localStorage
     const storedDocuments = localStorage.getItem("zk-cargo-pass-documents")
     if (storedDocuments) {
       const parsedDocuments = JSON.parse(storedDocuments)
-      // Filter for documents without a hash (not processed yet)
-      const pendingDocuments = parsedDocuments.filter((doc: Document) => doc.status === "pending" || !doc.hash)
+      const pendingDocuments = parsedDocuments.filter((doc: Document) => doc.status === "pending" || !doc.id)
       setDocuments(pendingDocuments)
     }
   }, [])
@@ -47,12 +45,10 @@ export default function GenerateZKPPage() {
   }, [language])
 
   const generateHash = async (text: string) => {
-    // Use Web Crypto API to generate SHA-256 hash
     const encoder = new TextEncoder()
     const data = encoder.encode(text)
     const hashBuffer = await crypto.subtle.digest("SHA-256", data)
 
-    // Convert hash to hex string
     const hashArray = Array.from(new Uint8Array(hashBuffer))
     const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
 

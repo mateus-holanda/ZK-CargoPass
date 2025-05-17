@@ -13,6 +13,9 @@ import { useToast } from "@/hooks/use-toast"
 import Loading from "../history/loading"
 import enUS from '../../i18n/locales/en-US.json'
 import ptBR from '../../i18n/locales/pt-BR.json'
+import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
+
+GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null)
@@ -60,9 +63,30 @@ export default function UploadPage() {
       const formData = new FormData()
       formData.append('file', file)
 
+      const arrayBuffer = await file.arrayBuffer();
+      const pdfData = new Uint8Array(arrayBuffer);
+      
+      const loadingTask = getDocument({ data: pdfData });
+      const pdf = await loadingTask.promise;
+      
+      let extractedText = '';
+      
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        
+        extractedText += pageText + '\n\n';
+
+      }
+      
+      const fileData = { name: file.name, type: file.type, size: file.size, status: 'pending',  data:  extractedText.trim(), userId: localStorage.getItem("zk-cargo-pass-user-id") || "" }
+
       const response = await fetch('/api/analyze-document', {
         method: 'POST',
-        body: formData,
+        body: JSON.stringify(fileData)
       })
 
       if (!response.ok) {
