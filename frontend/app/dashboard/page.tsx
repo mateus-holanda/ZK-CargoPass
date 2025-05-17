@@ -19,7 +19,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // Get user from localStorage
-    const user = localStorage.getItem("zk-cargo-pass-user")
+    const user = localStorage.getItem("zk-cargo-pass-user-name")
     if (user) {
       setUsername(user)
     }
@@ -145,7 +145,7 @@ export default function DashboardPage() {
                 onClick={() => (window.location.href = "/dashboard/generate-zkp")}
               >
                 <Lock className="h-6 w-6 text-green-600 mb-2" />
-                <span className="text-sm font-medium text-center">{translations.generateZKP}</span>
+                <span className="text-sm font-medium text-center">{translations.generateZKP.title}</span>
               </div>
               <div
                 className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"

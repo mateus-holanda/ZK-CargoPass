@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,14 +11,22 @@ import { FileText, Upload, AlertCircle, CheckCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import Loading from "../history/loading"
+import enUS from '../../i18n/locales/en-US.json'
+import ptBR from '../../i18n/locales/pt-BR.json'
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const [error, setError] = useState("")
+  const [language, setLanguage] = useState(localStorage.getItem("zk-cargo-pass-language") || "en-US")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
+  const translations = language === 'en-US' ? enUS : ptBR
+
+  useEffect(() => {
+    localStorage.setItem("zk-cargo-pass-language", language)
+  }, [language])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -28,10 +36,9 @@ export default function UploadPage() {
       return
     }
 
-    // Check file extension
     const fileExtension = selectedFile.name.split(".").pop()?.toLowerCase()
-    if (!["xml", "pdf", "json"].includes(fileExtension || "")) {
-      setError("Only .xml, .pdf, and .json files are supported")
+    if (!["pdf"].includes(fileExtension || "")) {
+      setError("Only .pdf files are supported")
       setFile(null)
       return
     }
@@ -50,10 +57,21 @@ export default function UploadPage() {
     setError("")
 
     try {
-      // Simulate upload delay
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      const formData = new FormData()
+      formData.append('file', file)
 
-      // Update stats in localStorage
+      const response = await fetch('/api/analyze-document', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to upload document')
+      }
+
+      const analysisData = await response.json()
+
       const storedStats = localStorage.getItem("zk-cargo-pass-stats")
       const stats = storedStats
         ? JSON.parse(storedStats)
@@ -75,22 +93,7 @@ export default function UploadPage() {
         status: "pending",
         type: file.type,
         size: file.size,
-        data: { "di_number": "20/1234567-8",
-                "registration_date": "2025-05-15",
-                "customs_clearance_date": "2025-05-20",
-              "financial": {
-                "total_declared_value_usd": 150000,
-                "incoterm": "CIF",
-                "exchange_rate": 5.12,
-                "taxes": {
-                  "ii": 15000,
-                  "ipi": 5000,
-                  "pis": 1200,
-                  "cofins": 550,
-                  "icms": 13000
-                },
-              },
-            },
+        data: analysisData,
         createdAt: new Date().toISOString(),
         deletedAt: null,
         userId: localStorage.getItem("zk-cargo-pass-user-id") || "",
@@ -99,8 +102,8 @@ export default function UploadPage() {
 
       setUploadSuccess(true)
       toast({
-        title: "Document uploaded successfully",
-        description: "Your document has been uploaded and is ready for processing.",
+        title: translations.documentUpload.success,
+        description: translations.documentUpload.success,
       })
 
       // Reset after 3 seconds
@@ -112,7 +115,7 @@ export default function UploadPage() {
         }
       }, 5000)
     } catch (err) {
-      setError("An error occurred while uploading the file")
+      setError(err instanceof Error ? err.message : "An error occurred while uploading the file")
       console.error(err)
     } finally {
       setUploading(false)
@@ -121,15 +124,20 @@ export default function UploadPage() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end p-4">
+        <button onClick={() => setLanguage('en-US')} className={`px-4 py-2 ${language === 'en-US' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>EN</button>
+        <button onClick={() => setLanguage('pt-BR')} className={`px-4 py-2 ${language === 'pt-BR' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>PT</button>
+      </div>
+
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Document Upload</h1>
-        <p className="text-gray-500">Upload your customs documentation for processing</p>
+        <h1 className="text-3xl font-bold tracking-tight">{translations.documentUpload.title}</h1>
+        <p className="text-gray-500">{translations.documentUpload.subtitle}</p>
       </div>
 
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>Upload Document</CardTitle>
-          <CardDescription>Supported file formats: .xml, .pdf, .json</CardDescription>
+          <CardTitle>{translations.documentUpload.cardTitle}</CardTitle>
+          <CardDescription>{translations.documentUpload.supportedFormats}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
@@ -144,19 +152,19 @@ export default function UploadPage() {
             <Alert className="bg-green-50 text-green-800 border-green-200">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertTitle>Success</AlertTitle>
-              <AlertDescription>Document uploaded successfully!</AlertDescription>
+              <AlertDescription>{translations.documentUpload.success}</AlertDescription>
             </Alert>
           )}
 
           <div className="space-y-2 hover:bg-gray-50 rounded-md p-2">
-            <Label htmlFor="file">Select File</Label>
+            <Label htmlFor="file">{translations.documentUpload.selectFile}</Label>
             <Input
               id="file"
               type="file"
               className="cursor-pointer"
               ref={fileInputRef}
               onChange={handleFileChange}
-              accept=".xml,.pdf,.json"
+              accept=".pdf"
               disabled={uploading || uploadSuccess}
             />
           </div>
@@ -184,12 +192,12 @@ export default function UploadPage() {
             {uploading ? (
               <>
                 <Loading />
-                Uploading...
+                {translations.documentUpload.uploading}
               </>
             ) : (
               <>
                 <Upload className="mr-2 h-4 w-4" />
-                Upload Document
+                {translations.documentUpload.uploadButton}
               </>
             )}
           </Button>
@@ -198,16 +206,16 @@ export default function UploadPage() {
 
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>Upload Guidelines</CardTitle>
-          <CardDescription>Follow these guidelines for successful document processing</CardDescription>
+          <CardTitle>{translations.documentUpload.guidelines.title}</CardTitle>
+          <CardDescription>{translations.documentUpload.guidelines.subtitle}</CardDescription>
         </CardHeader>
         <CardContent>
           <ul className="list-disc pl-5 space-y-2 text-sm">
-            <li>Ensure all documents are in the supported formats (.xml, .pdf, .json)</li>
-            <li>Files should not exceed 10MB in size</li>
-            <li>Make sure documents contain all required information for customs clearance</li>
-            <li>Sensitive information will be protected by zero-knowledge proofs</li>
-            <li>After upload, proceed to the "Generate ZKP" section to create a proof</li>
+            <li>{translations.documentUpload.guidelines.format}</li>
+            <li>{translations.documentUpload.guidelines.size}</li>
+            <li>{translations.documentUpload.guidelines.info}</li>
+            <li>{translations.documentUpload.guidelines.security}</li>
+            <li>{translations.documentUpload.guidelines.nextStep}</li>
           </ul>
         </CardContent>
       </Card>

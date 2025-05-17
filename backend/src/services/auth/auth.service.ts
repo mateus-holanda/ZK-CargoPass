@@ -28,7 +28,8 @@ export class AuthService {
 
     const encryptedPassword = encryptSHA256(password, user.salt)
     const scopes = ScopesByRole[sessionRole] ?? []
-    if (user.password !== encryptedPassword || !scopes.includes(Scopes.AUTH_LOG_IN)) {
+
+    if (user.password !== encryptedPassword) {
       throw new UnauthorizedException('Invalid credentials')
     }
 
