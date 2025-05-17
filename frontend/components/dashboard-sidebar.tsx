@@ -61,7 +61,7 @@ export function DashboardSidebar() {
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-2 py-2">
           <img src="/images/logo.png" alt="zkCargoPass Logo" className="h-8 w-auto" />
-          <div className="font-bold text-lg text-[#3C3FB4]">zkCargoPass</div>
+          <div className="font-bold text-lg text-[#3C3FB4]" onClick={() => router.push("/")}>zkCargoPass</div>
         </div>
         <SidebarTrigger className="absolute right-2 top-3 md:hidden" />
       </SidebarHeader>

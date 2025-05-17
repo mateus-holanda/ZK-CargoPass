@@ -28,10 +28,9 @@ export default function UploadPage() {
       return
     }
 
-    // Check file extension
     const fileExtension = selectedFile.name.split(".").pop()?.toLowerCase()
-    if (!["xml", "pdf", "json"].includes(fileExtension || "")) {
-      setError("Only .xml, .pdf, and .json files are supported")
+    if (!["pdf"].includes(fileExtension || "")) {
+      setError("Only .pdf files are supported")
       setFile(null)
       return
     }
@@ -50,10 +49,21 @@ export default function UploadPage() {
     setError("")
 
     try {
-      // Simulate upload delay
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      const formData = new FormData()
+      formData.append('file', file)
 
-      // Update stats in localStorage
+      const response = await fetch('/api/analyze-document', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to upload document')
+      }
+
+      const analysisData = await response.json()
+
       const storedStats = localStorage.getItem("zk-cargo-pass-stats")
       const stats = storedStats
         ? JSON.parse(storedStats)
@@ -75,22 +85,7 @@ export default function UploadPage() {
         status: "pending",
         type: file.type,
         size: file.size,
-        data: { "di_number": "20/1234567-8",
-                "registration_date": "2025-05-15",
-                "customs_clearance_date": "2025-05-20",
-              "financial": {
-                "total_declared_value_usd": 150000,
-                "incoterm": "CIF",
-                "exchange_rate": 5.12,
-                "taxes": {
-                  "ii": 15000,
-                  "ipi": 5000,
-                  "pis": 1200,
-                  "cofins": 550,
-                  "icms": 13000
-                },
-              },
-            },
+        data: analysisData,
         createdAt: new Date().toISOString(),
         deletedAt: null,
         userId: localStorage.getItem("zk-cargo-pass-user-id") || "",
@@ -100,7 +95,7 @@ export default function UploadPage() {
       setUploadSuccess(true)
       toast({
         title: "Document uploaded successfully",
-        description: "Your document has been uploaded and is ready for processing.",
+        description: "Your document has been uploaded and analyzed successfully.",
       })
 
       // Reset after 3 seconds
@@ -112,7 +107,7 @@ export default function UploadPage() {
         }
       }, 5000)
     } catch (err) {
-      setError("An error occurred while uploading the file")
+      setError(err instanceof Error ? err.message : "An error occurred while uploading the file")
       console.error(err)
     } finally {
       setUploading(false)
@@ -129,7 +124,7 @@ export default function UploadPage() {
       <Card className="max-w-2xl">
         <CardHeader>
           <CardTitle>Upload Document</CardTitle>
-          <CardDescription>Supported file formats: .xml, .pdf, .json</CardDescription>
+          <CardDescription>Supported file formats: pdf</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
@@ -156,7 +151,7 @@ export default function UploadPage() {
               className="cursor-pointer"
               ref={fileInputRef}
               onChange={handleFileChange}
-              accept=".xml,.pdf,.json"
+              accept=".pdf"
               disabled={uploading || uploadSuccess}
             />
           </div>
@@ -203,8 +198,8 @@ export default function UploadPage() {
         </CardHeader>
         <CardContent>
           <ul className="list-disc pl-5 space-y-2 text-sm">
-            <li>Ensure all documents are in the supported formats (.xml, .pdf, .json)</li>
-            <li>Files should not exceed 10MB in size</li>
+            <li>Ensure all documents are in the supported formats (.pdf)</li>
+            <li>Files should not exceed 3MB in size</li>
             <li>Make sure documents contain all required information for customs clearance</li>
             <li>Sensitive information will be protected by zero-knowledge proofs</li>
             <li>After upload, proceed to the "Generate ZKP" section to create a proof</li>

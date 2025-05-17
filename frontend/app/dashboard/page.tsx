@@ -19,7 +19,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // Get user from localStorage
-    const user = localStorage.getItem("zk-cargo-pass-user")
+    const user = localStorage.getItem("zk-cargo-pass-user-name")
     if (user) {
       setUsername(user)
     }
