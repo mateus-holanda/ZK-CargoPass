@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { FileText, CheckCircle, AlertCircle, Search } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import enUS from '../../i18n/locales/en-US.json'
+import ptBR from '../../i18n/locales/pt-BR.json'
 
 interface Document {
   id: string
@@ -30,6 +32,8 @@ export default function ValidatePage() {
   const [searchResult, setSearchResult] = useState<Document | null>(null)
   const [searching, setSearching] = useState(false)
   const [error, setError] = useState("")
+  const [language, setLanguage] = useState(localStorage.getItem("zk-cargo-pass-language") || "en-US")
+  const translations = language === 'en-US' ? enUS : ptBR
   const { toast } = useToast()
 
   useEffect(() => {
@@ -41,9 +45,13 @@ export default function ValidatePage() {
     }
   }, [])
 
+  useEffect(() => {
+    localStorage.setItem("zk-cargo-pass-language", language)
+  }, [language])
+
   const handleSearch = () => {
     if (!searchHash.trim()) {
-      setError("Please enter a hash to search")
+      setError(translations.validate.error.enterHash)
       return
     }
 
@@ -61,7 +69,7 @@ export default function ValidatePage() {
       if (foundDocument) {
         setSearchResult(foundDocument)
       } else {
-        setError("No document found with the provided hash")
+        setError(translations.validate.error.notFound)
       }
 
       setSearching(false)
@@ -104,7 +112,7 @@ export default function ValidatePage() {
         }
 
         toast({
-          title: `Document ${newStatus === "verified" ? "validated" : "marked as pending"}`,
+          title: newStatus === "verified" ? translations.validate.success.validated : translations.validate.success.markedPending,
           description: `${doc.name} has been ${newStatus === "verified" ? "validated" : "marked as pending"}.`,
         })
 
@@ -122,15 +130,20 @@ export default function ValidatePage() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end p-4">
+        <button onClick={() => setLanguage('en-US')} className={`px-4 py-2 ${language === 'en-US' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>EN</button>
+        <button onClick={() => setLanguage('pt-BR')} className={`px-4 py-2 ${language === 'pt-BR' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>PT</button>
+      </div>
+
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Manual Validation</h1>
-        <p className="text-gray-500">Verify document authenticity and update status</p>
+        <h1 className="text-3xl font-bold tracking-tight">{translations.validate.title}</h1>
+        <p className="text-gray-500">{translations.validate.subtitle}</p>
       </div>
 
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>Verify Document</CardTitle>
-          <CardDescription>Enter a document hash to verify its authenticity</CardDescription>
+          <CardTitle>{translations.validate.verifyDocument}</CardTitle>
+          <CardDescription>{translations.validate.verifyDescription}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
@@ -142,11 +155,11 @@ export default function ValidatePage() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="hash">Document Hash</Label>
+            <Label htmlFor="hash">{translations.validate.documentHash}</Label>
             <div className="flex gap-2">
               <Input
                 id="hash"
-                placeholder="Enter document hash..."
+                placeholder={translations.validate.enterHash}
                 value={searchHash}
                 onChange={(e) => setSearchHash(e.target.value)}
               />
@@ -158,12 +171,12 @@ export default function ValidatePage() {
                 {searching ? (
                   <>
                     <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                    Searching...
+                    {translations.validate.searching}
                   </>
                 ) : (
                   <>
                     <Search className="mr-2 h-4 w-4" />
-                    Verify
+                    {translations.validate.verify}
                   </>
                 )}
               </Button>
@@ -173,7 +186,7 @@ export default function ValidatePage() {
           {searchResult && (
             <div className="mt-6 border rounded-md overflow-hidden">
               <div className="bg-gray-50 p-4 border-b">
-                <h3 className="font-medium">Document Found</h3>
+                <h3 className="font-medium">{translations.validate.documentFound}</h3>
               </div>
               <div className="p-4">
                 <div className="space-y-4">
@@ -182,14 +195,14 @@ export default function ValidatePage() {
                     <div>
                       <p className="font-medium">{searchResult.name}</p>
                       <p className="text-xs text-gray-500">
-                        Uploaded on {new Date(searchResult.createdAt).toLocaleDateString()}
+                        {translations.validate.uploadedOn} {new Date(searchResult.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-500">Status</p>
+                      <p className="text-gray-500">{translations.validate.status}</p>
                       <div className="flex items-center gap-2 mt-1">
                         {searchResult.status === "verified" ? (
                           <CheckCircle className="h-4 w-4 text-green-500" />
@@ -208,7 +221,7 @@ export default function ValidatePage() {
                       </div>
                     </div>
                     <div>
-                      <p className="text-gray-500">Hash</p>
+                      <p className="text-gray-500">{translations.validate.hash}</p>
                       <code className="text-xs bg-gray-100 p-1 rounded block mt-1 overflow-hidden text-ellipsis">
                         {searchResult.id}
                       </code>
@@ -217,7 +230,7 @@ export default function ValidatePage() {
 
                   <div className="flex items-center justify-between pt-2 border-t">
                     <Label htmlFor="validate-toggle" className="cursor-pointer">
-                      Mark as verified
+                      {translations.validate.markAsVerified}
                     </Label>
                     <Switch
                       id="validate-toggle"
@@ -234,18 +247,18 @@ export default function ValidatePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Documents</CardTitle>
-          <CardDescription>Recently processed documents that may need validation</CardDescription>
+          <CardTitle>{translations.validate.recentDocuments}</CardTitle>
+          <CardDescription>{translations.validate.recentDescription}</CardDescription>
         </CardHeader>
         <CardContent>
           {documents.filter((doc) => doc.id).length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Document</TableHead>
-                  <TableHead>Upload Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>{translations.validate.document}</TableHead>
+                  <TableHead>{translations.validate.uploadDate}</TableHead>
+                  <TableHead>{translations.validate.status}</TableHead>
+                  <TableHead>{translations.validate.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -290,8 +303,8 @@ export default function ValidatePage() {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-4">
                 <FileText className="h-6 w-6 text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium">No documents to validate</h3>
-              <p className="text-gray-500 mt-2">There are no documents with generated proofs that need validation.</p>
+              <h3 className="text-lg font-medium">{translations.validate.noDocuments}</h3>
+              <p className="text-gray-500 mt-2">{translations.validate.noDocumentsDescription}</p>
             </div>
           )}
         </CardContent>
