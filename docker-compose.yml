@@ -7,12 +7,25 @@ services:
     restart: always
     ports:
       - "5432:5432"
+    networks:
+      - zk-cargo-pass
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: zk_cargo_pass
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - zk-cargo-pass
+    volumes:
+      - redis_data:/data
 
   backend:
     build:
@@ -21,13 +34,11 @@ services:
     container_name: backend
     restart: always
     ports:
-      - "3000:3000"
+      - "3001:3001"
+    networks:
+      - zk-cargo-pass
     depends_on:
       - postgres
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/zk_cargo_pass?schema=public
-      JWT_SECRET: secret
-      NODE_ENV: development
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -39,7 +50,9 @@ services:
     container_name: frontend
     restart: always
     ports:
-      - "3001:3001"
+      - "3000:3000"
+    networks:
+      - zk-cargo-pass
     depends_on:
       - backend
     environment:
@@ -50,3 +63,7 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
+
+networks:
+  zk-cargo-pass:

@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import axios from "axios"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,49 +12,77 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Lock } from "lucide-react"
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("")
+  const [email, setemail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [isSignUp, setIsSignUp] = useState(false)
   const [name, setName] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError("")
+    setIsLoading(true)
 
-    if (!username || !password) {
-      setError("Please enter both username and password")
+    if (!email || !password) {
+      setError("Please enter both email and password")
+      setIsLoading(false)
       return
     }
 
-    // For demo purposes, accept any login
-    // In a real app, you would validate against a backend
-    localStorage.setItem("zk-cargo-pass-auth", "authenticated")
-    localStorage.setItem("zk-cargo-pass-user", username)
+    try {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+        email,
+        password,
+      })
 
-    router.push("/dashboard")
+      if (response.data.user.id && response.data.user.name) {
+        localStorage.setItem("zk-cargo-pass-user-name", response.data.user.name)
+        localStorage.setItem("zk-cargo-pass-user-id", response.data.user.id)
+        router.push("/dashboard")
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to login. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError("")
+    setIsLoading(true)
 
-    if (!username || !password) {
-      setError("Please enter both username and password")
+    if (!email || !password) {
+      setError("Please enter both email and password")
+      setIsLoading(false)
       return
     }
 
     if (isSignUp && !name) {
       setError("Please enter your name")
+      setIsLoading(false)
       return
     }
 
-    // For demo purposes, accept any sign-up
-    // In a real app, you would send this data to a backend
-    localStorage.setItem("zk-cargo-pass-auth", "authenticated")
-    localStorage.setItem("zk-cargo-pass-user", username)
-    localStorage.setItem("zk-cargo-pass-name", name)
+    try {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/user/signup`, {
+        email,
+        password,
+        name,
+      })
 
-    router.push("/dashboard")
+      if (response.data.user.name && response.data.user.id) {
+        localStorage.setItem("zk-cargo-pass-user-name", response.data.user.name)
+        localStorage.setItem("zk-cargo-pass-user-id",  response.data.user.id)
+        router.push("/dashboard")
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to sign up. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -87,12 +116,12 @@ export default function LoginPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="username"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setemail(e.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -108,8 +137,12 @@ export default function LoginPage() {
             
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">
-            <Button type="submit" className="w-full bg-[#3C3FB4] hover:bg-[#1A2A5E]">
-              {isSignUp ? "Sign Up" : "Login"}
+            <Button 
+              type="submit" 
+              className="w-full bg-[#3C3FB4] hover:bg-[#1A2A5E]"
+              disabled={isLoading}
+            >
+              {isLoading ? "Loading..." : (isSignUp ? "Sign Up" : "Login")}
             </Button>
           </CardFooter>
         </form>

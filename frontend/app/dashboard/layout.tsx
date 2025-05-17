@@ -19,9 +19,9 @@ export default function DashboardLayout({
 
   useEffect(() => {
     // Check if user is authenticated
-    const auth = localStorage.getItem("zk-cargo-pass-auth")
+    const user = localStorage.getItem("zk-cargo-pass-user-id")
 
-    if (auth !== "authenticated") {
+    if (!user) {
       router.push("/login")
     } else {
       setIsAuthenticated(true)

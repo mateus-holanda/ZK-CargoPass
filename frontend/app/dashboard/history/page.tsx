@@ -6,6 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { FileText, Lock, CheckCircle, Clock, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import enUS from '../../i18n/locales/en-US.json'
+import ptBR from '../../i18n/locales/pt-BR.json'
 
 interface Document {
   id: string
@@ -23,6 +25,8 @@ export default function HistoryPage() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([])
+  const [language, setLanguage] = useState(localStorage.getItem("zk-cargo-pass-language") || "en-US")
+  const translations = language === 'en-US' ? enUS : ptBR
 
   useEffect(() => {
     // Load documents from localStorage
@@ -33,6 +37,10 @@ export default function HistoryPage() {
       setFilteredDocuments(parsedDocuments)
     }
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem("zk-cargo-pass-language", language)
+  }, [language])
 
   useEffect(() => {
     // Filter documents based on search term
@@ -77,19 +85,24 @@ export default function HistoryPage() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end p-4">
+        <button onClick={() => setLanguage('en-US')} className={`px-4 py-2 ${language === 'en-US' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>EN</button>
+        <button onClick={() => setLanguage('pt-BR')} className={`px-4 py-2 ${language === 'pt-BR' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>PT</button>
+      </div>
+
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Submission History</h1>
-        <p className="text-gray-500">View and track all your document submissions</p>
+        <h1 className="text-3xl font-bold tracking-tight">{translations.history.title}</h1>
+        <p className="text-gray-500">{translations.history.subtitle}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Document History</CardTitle>
-          <CardDescription>All your uploaded documents and their verification status</CardDescription>
+          <CardTitle>{translations.history.documentHistory}</CardTitle>
+          <CardDescription>{translations.history.documentHistoryDescription}</CardDescription>
           <div className="mt-4 relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
             <Input
-              placeholder="Search by document name, hash, or status..."
+              placeholder={translations.history.searchPlaceholder}
               className="pl-8"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -101,10 +114,10 @@ export default function HistoryPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Document</TableHead>
-                  <TableHead>Upload Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Hash / ZK Proof</TableHead>
+                  <TableHead>{translations.history.document}</TableHead>
+                  <TableHead>{translations.history.uploadDate}</TableHead>
+                  <TableHead>{translations.history.status}</TableHead>
+                  <TableHead>{translations.history.hashZkProof}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -134,7 +147,7 @@ export default function HistoryPage() {
                           </code>
                         </div>
                       ) : (
-                        <span className="text-gray-500 text-sm">Not generated</span>
+                        <span className="text-gray-500 text-sm">{translations.history.notGenerated}</span>
                       )}
                     </TableCell>
                   </TableRow>
@@ -146,11 +159,11 @@ export default function HistoryPage() {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-4">
                 <FileText className="h-6 w-6 text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium">No documents found</h3>
+              <h3 className="text-lg font-medium">{translations.history.noDocuments}</h3>
               <p className="text-gray-500 mt-2">
                 {documents.length === 0
-                  ? "You haven't uploaded any documents yet."
-                  : "No documents match your search criteria."}
+                  ? translations.history.noDocumentsUploaded
+                  : translations.history.noDocumentsMatch}
               </p>
             </div>
           )}
@@ -159,34 +172,31 @@ export default function HistoryPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Blockchain Verification</CardTitle>
-          <CardDescription>How to verify your documents on the blockchain</CardDescription>
+          <CardTitle>{translations.history.blockchainVerification}</CardTitle>
+          <CardDescription>{translations.history.blockchainDescription}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4 text-sm">
             <p>
-              All document proofs are stored on the Ethereum blockchain for secure, immutable verification. Customs
-              officials can verify the authenticity of your documents without accessing sensitive information.
+              {translations.history.blockchainText}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div className="p-4 bg-gray-50 rounded-md">
                 <h3 className="font-medium flex items-center gap-2 mb-2">
                   <Lock className="h-4 w-4 text-green-600" />
-                  For Importers
+                  {translations.history.forImporters}
                 </h3>
                 <p className="text-xs text-gray-500">
-                  Share the document hash with customs officials for verification. Your sensitive business data remains
-                  private and protected.
+                  {translations.history.importersText}
                 </p>
               </div>
               <div className="p-4 bg-gray-50 rounded-md">
                 <h3 className="font-medium flex items-center gap-2 mb-2">
                   <CheckCircle className="h-4 w-4 text-green-600" />
-                  For Customs Officials
+                  {translations.history.forCustoms}
                 </h3>
                 <p className="text-xs text-gray-500">
-                  Verify document authenticity by checking the hash against the blockchain record. No need to access or
-                  store sensitive business information.
+                  {translations.history.customsText}
                 </p>
               </div>
             </div>

@@ -1,0 +1,66 @@
+{
+  "di_number": "20/1234567-8",
+  "registration_date": "2025-05-15",
+  "customs_clearance_date": "2025-05-20",
+  "importer": {
+    "cnpj": "12.345.678/0001-99",
+    "company_name": "Importadora XYZ Ltda.",
+    "address": "Rua das Alfândegas, 100 - Santos/SP"
+  },
+  "shipper": {
+    "name": "Global Freight Ltd.",
+    "country": "China"
+  },
+  "cargo": {
+    "description": "Eletrônicos diversos",
+    "gross_weight_kg": 10000.5,
+    "net_weight_kg": 9800,
+    "volume_m3": 45.2,
+    "packages": 100,
+    "packaging_type": "Caixas de papelão"
+  },
+  "transport": {
+    "modality": "Marítima",
+    "vessel_name": "Evergreen Hope",
+    "bill_of_lading": "BL1234567890",
+    "container_numbers": ["MSCU1234567", "MSCU7654321"],
+    "port_of_loading": "Shanghai",
+    "port_of_discharge": "Santos"
+  },
+  "financial": {
+    "total_declared_value_usd": 150000,
+    "incoterm": "CIF",
+    "exchange_rate": 5.12,
+    "taxes": {
+      "ii": 15000,
+      "ipi": 5000,
+      "pis": 1200,
+      "cofins": 550,
+      "icms": 13000
+    }
+  },
+  "ncm_codes": [
+    {
+      "ncm": "8471.30.12",
+      "description": "Unidades de processamento digital",
+      "quantity": 200,
+      "unit": "un",
+      "unit_value_usd": 500
+    }
+  ],
+  "documents": [
+    {
+      "type": "Invoice",
+      "number": "INV-7890",
+      "date": "2025-04-30",
+      "issuer": "Global Freight Ltd."
+    },
+    {
+      "type": "Packing List",
+      "number": "PL-7890",
+      "date": "2025-04-29"
+    }
+  ],
+  "status": "Liberada",
+  "observations": "Carga sujeita à conferência física."
+}
