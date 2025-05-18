@@ -33,36 +33,11 @@ export function DashboardSidebar() {
   }
 
   const menuItems = [
-    {
-      title: translations.dashboardTitle,
-      icon: Home,
-      href: "/dashboard",
-      isActive: pathname === "/dashboard",
-    },
-    {
-      title: translations.uploadDocument,
-      icon: FileText,
-      href: "/dashboard/upload",
-      isActive: pathname === "/dashboard/upload",
-    },
-    {
-      title: translations.generateZKP.title,
-      icon: Lock,
-      href: "/dashboard/generate-zkp",
-      isActive: pathname === "/dashboard/generate-zkp",
-    },
-    {
-      title: translations.viewHistory,
-      icon: History,
-      href: "/dashboard/history",
-      isActive: pathname === "/dashboard/history",
-    },
-    {
-      title: translations.validateSubmission,
-      icon: CheckCircle,
-      href: "/dashboard/validate",
-      isActive: pathname === "/dashboard/validate",
-    },
+    { title: translations.dashboardTitle, icon: Home, href: "/dashboard" },
+    { title: translations.uploadDocument, icon: FileText, href: "/dashboard/upload" },
+    { title: translations.generateZKP.title, icon: Lock, href: "/dashboard/generate-zkp" },
+    { title: translations.viewHistory, icon: History, href: "/dashboard/history" },
+    { title: translations.validateSubmission, icon: CheckCircle, href: "/dashboard/validate" },
   ]
 
   return (
@@ -72,16 +47,21 @@ export function DashboardSidebar() {
           <img src="/images/logo.png" alt="zkCargoPass Logo" className="h-8 w-auto" />
           <div className="text-lg text-[#3C3FB4]"><b>zkCargo</b>Pass</div>
         </div>
-        <SidebarTrigger className="absolute right-2 top-3 md:hidden" /> 
+        <SidebarTrigger className="absolute right-2 top-3 md:hidden" />
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {menuItems.map((item) => (
-            <SidebarMenuItem className="my-1" key={item.title}>
-              <SidebarMenuButton className="mx-3" asChild isActive={item.isActive} tooltip={item.title}>
-                <a href={item.href}>
-                  <item.icon />
-                  <span>{item.title}</span>
+          {menuItems.map(({ title, icon: Icon, href }) => (
+            <SidebarMenuItem className="my-1" key={title}>
+              <SidebarMenuButton 
+                className="mx-3" 
+                asChild 
+                isActive={pathname === href} 
+                tooltip={title}
+              >
+                <a href={href}>
+                  <Icon />
+                  <span>{title}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>

@@ -75,7 +75,7 @@
     "supportedFormats": "Formatos de arquivo suportados: pdf",
     "selectFile": "Selecionar Arquivo",
     "uploadButton": "Enviar Documento",
-    "uploading": "Enviando...",
+    "uploading": "Enviando e analisando...",
     "success": "Documento enviado com sucesso!",
     "guidelines": {
       "title": "Diretrizes de Upload",
@@ -133,7 +133,9 @@
     "noDocumentsDescription": "Não há documentos com provas geradas que precisem de validação.",
     "error": {
       "enterHash": "Por favor, digite um hash para pesquisar",
-      "notFound": "Nenhum documento encontrado com o hash fornecido"
+      "notFound": "Nenhum documento encontrado com o hash fornecido",
+      "fetchError": "Falha ao buscar documentos",
+      "searchError": "Falha ao pesquisar documento"
     },
     "success": {
       "validated": "Documento validado",

@@ -5,9 +5,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FileText, Lock, CheckCircle, Clock } from "lucide-react"
 import enUS from '../i18n/locales/en-US.json';
 import ptBR from '../i18n/locales/pt-BR.json';
+import { api } from "@/lib/axios";
+import { WalletConnect } from "@/components/ui/wallet-connect";
+
+interface Document {
+  id: string;
+  name: string;
+  status: string;
+  type: string;
+  size: number;
+  data: any;
+  createdAt: string;
+}
 
 export default function DashboardPage() {
   const [username, setUsername] = useState("")
+  const [userId, setUserId] = useState("")
+  const [documents, setDocuments] = useState<Document[]>([])
   const [stats, setStats] = useState({
     documentsUploaded: 0,
     zkProofsGenerated: 0,
@@ -18,18 +32,46 @@ export default function DashboardPage() {
   const translations = language === 'en-US' ? enUS : ptBR;
 
   useEffect(() => {
-    // Get user from localStorage
     const user = localStorage.getItem("zk-cargo-pass-user-name")
+    const storedUserId = localStorage.getItem("zk-cargo-pass-user-id")
     if (user) {
       setUsername(user)
     }
-
-    // Get stats from localStorage or use defaults
-    const storedStats = localStorage.getItem("zk-cargo-pass-stats")
-    if (storedStats) {
-      setStats(JSON.parse(storedStats))
+    if (storedUserId) {
+      setUserId(storedUserId)
     }
-  }, [])
+
+    const sessionId = localStorage.getItem('zk-cargo-pass-session-id')
+    if (sessionId) {
+      api.defaults.headers.common['Cookie'] = `auth.sessionId=${sessionId}`
+    }
+
+    const fetchDocuments = async () => {
+      try {
+        const response = await api.get('/document', {
+          params: {
+            userId: userId
+          }
+        })
+        const fetchedDocuments = response.data
+        setDocuments(fetchedDocuments)
+        
+        const newStats = {
+          documentsUploaded: fetchedDocuments.length,
+          zkProofsGenerated: fetchedDocuments.filter((doc: Document) => doc.status === 'proof_generated').length,
+          validatedSubmissions: fetchedDocuments.filter((doc: Document) => doc.status === 'validated').length,
+          pendingSubmissions: fetchedDocuments.filter((doc: Document) => doc.status === 'pending').length,
+        }
+        setStats(newStats)
+      } catch (error) {
+        console.error('Error fetching documents:', error)
+      }
+    }
+
+    if (userId) {
+      fetchDocuments()
+    }
+  }, [userId])
 
   useEffect(() => {
     localStorage.setItem("zk-cargo-pass-language", language)
@@ -40,6 +82,8 @@ export default function DashboardPage() {
       <div className="flex justify-end p-4">
         <button onClick={() => setLanguage('en-US')} className={`px-4 py-2 ${language === 'en-US' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>EN</button>
         <button onClick={() => setLanguage('pt-BR')} className={`px-4 py-2 ${language === 'pt-BR' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>PT</button>
+        <div className="flex justify-end p-4"></div>
+        <WalletConnect />
       </div>
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{translations.dashboardTitle}</h1>

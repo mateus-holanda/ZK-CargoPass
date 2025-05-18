@@ -9,10 +9,37 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { FileText, CheckCircle, AlertCircle, Search } from "lucide-react"
+import { FileText, CheckCircle, AlertCircle, Search, Upload } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import enUS from '../../i18n/locales/en-US.json'
 import ptBR from '../../i18n/locales/pt-BR.json'
+import { api } from "@/lib/axios"
+import { WalletConnect } from "@/components/ui/wallet-connect"
+import { useWeb3 } from "@/hooks/useWeb3"
+import { Noir } from "@noir-lang/noir_js"
+import { UltraPlonkBackend } from "@aztec/bb.js"
+import TaxCircuit from "../../../../circuits/tax_validation/target/tax_validation.json"
+import DateCircuit from "../../../../circuits/date_validation/target/date_validation.json"
+import CargoCircuit from "../../../../circuits/cargo_validation/target/cargo_validation.json"
+// import { zkVerifySession, CurveType, Library } from 'zkverifyjs';
+
+const CIRCUITS = [
+  {
+    key: "tax",
+    label: "Tax Validation",
+    circuit: TaxCircuit,
+  },
+  {
+    key: "date",
+    label: "Date Validation",
+    circuit: DateCircuit,
+  },
+  {
+    key: "cargo",
+    label: "Cargo Validation",
+    circuit: CargoCircuit,
+  },
+]
 
 interface Document {
   id: string
@@ -26,6 +53,14 @@ interface Document {
   userId: string
 }
 
+interface ProofData {
+  proof: string
+  timestamp: string
+  documentId: string
+  verification_key: string
+  circuitType?: string
+}
+
 export default function ValidatePage() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [searchHash, setSearchHash] = useState("")
@@ -33,23 +68,37 @@ export default function ValidatePage() {
   const [searching, setSearching] = useState(false)
   const [error, setError] = useState("")
   const [language, setLanguage] = useState(localStorage.getItem("zk-cargo-pass-language") || "en-US")
+  const [proofFile, setProofFile] = useState<File | null>(null)
+  const [validating, setValidating] = useState(false)
+  const [validationResult, setValidationResult] = useState<{ valid: boolean; message: string } | null>(null)
   const translations = language === 'en-US' ? enUS : ptBR
   const { toast } = useToast()
+  const { address, isConnected } = useWeb3()
 
   useEffect(() => {
-    // Load documents from localStorage
-    const storedDocuments = localStorage.getItem("zk-cargo-pass-documents")
-    if (storedDocuments) {
-      const parsedDocuments = JSON.parse(storedDocuments)
-      setDocuments(parsedDocuments)
+    const fetchDocuments = async () => {
+      try {
+        const userId = localStorage.getItem("zk-cargo-pass-user-id")
+        if (!userId) return
+
+        const response = await api.get('/document', {
+          params: { userId }
+        })
+        setDocuments(response.data)
+      } catch (error) {
+        console.error('Error fetching documents:', error)
+        setError(translations.validate.error.fetchError || 'Failed to fetch documents')
+      }
     }
+
+    fetchDocuments()
   }, [])
 
   useEffect(() => {
     localStorage.setItem("zk-cargo-pass-language", language)
   }, [language])
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!searchHash.trim()) {
       setError(translations.validate.error.enterHash)
       return
@@ -59,11 +108,18 @@ export default function ValidatePage() {
     setError("")
     setSearchResult(null)
 
-    // Simulate search delay
-    setTimeout(() => {
-      // Find document with matching hash
-      const foundDocument = documents.find(
-        (doc) => doc.id && doc.id.toLowerCase().includes(searchHash.toLowerCase()),
+    try {
+      const userId = localStorage.getItem("zk-cargo-pass-user-id")
+      if (!userId) {
+        throw new Error('User ID not found')
+      }
+
+      const response = await api.get('/document', {
+        params: { userId }
+      })
+      
+      const foundDocument = response.data.find(
+        (doc: Document) => doc.id && doc.id.toLowerCase().includes(searchHash.toLowerCase())
       )
 
       if (foundDocument) {
@@ -71,61 +127,154 @@ export default function ValidatePage() {
       } else {
         setError(translations.validate.error.notFound)
       }
-
+    } catch (error) {
+      console.error('Error searching document:', error)
+      setError(translations.validate.error.searchError || 'Failed to search document')
+    } finally {
       setSearching(false)
-    }, 1000)
+    }
   }
 
-  const handleToggleStatus = (docId: string) => {
-    // Update document status in localStorage
-    const updatedDocuments = documents.map((doc) => {
-      if (doc.id === docId) {
-        const newStatus = doc.status === "verified" ? "pending" : "verified"
+  const handleProofFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      setProofFile(file)
+      setValidationResult(null)
+    }
+  }
 
-        // Update stats
-        const storedStats = localStorage.getItem("zk-cargo-pass-stats")
-        const stats = storedStats
-          ? JSON.parse(storedStats)
-          : {
-              documentsUploaded: 0,
-              zkProofsGenerated: 0,
-              validatedSubmissions: 0,
-              pendingSubmissions: 0,
-            }
+  const handleValidateProof = async () => {
+    if (!proofFile) {
+      setError("Please select a proof file")
+      return
+    }
 
-        if (newStatus === "verified") {
-          stats.validatedSubmissions += 1
-          stats.pendingSubmissions = Math.max(0, stats.pendingSubmissions - 1)
-        } else {
-          stats.validatedSubmissions = Math.max(0, stats.validatedSubmissions - 1)
-          stats.pendingSubmissions += 1
-        }
+    if (!isConnected || !address) {
+      setError("Please connect your wallet first")
+      return
+    }
 
-        localStorage.setItem("zk-cargo-pass-stats", JSON.stringify(stats))
+    setValidating(true)
+    setError("")
+    setValidationResult(null)
 
-        // Update search result if it's the same document
-        if (searchResult && searchResult.id === docId) {
-          setSearchResult({
-            ...searchResult,
-            status: newStatus,
-          })
-        }
+    try {
+      // let session = await zkVerifySession.start().Volta().withWallet({
+      //   accountAddress: address,
+      //   source: "wallet"
+      // });                           
 
-        toast({
-          title: newStatus === "verified" ? translations.validate.success.validated : translations.validate.success.markedPending,
-          description: `${doc.name} has been ${newStatus === "verified" ? "validated" : "marked as pending"}.`,
-        })
+      const proofText = await proofFile.text()
+      const proofData: ProofData = JSON.parse(proofText)
+      // const vkey = proofData.verification_key;
 
-        return {
-          ...doc,
-          status: newStatus,
-        }
+      // const { events, transactionResult } = await session
+      //   .verify() // Optionally provide account address to verify("myaddress") if connected with multple accounts
+      //   .ultraplonk() // Select the proof type (e.g., ultraplonk)
+      //   .nonce(1) // Set the nonce (optional)
+      //   .withRegisteredVk() // Indicate that the verification key is already registered (optional)
+      //   .execute({
+      //     proofData: {
+      //       vk: vkey,
+      //       proof: proofData.proof,
+      //       publicSignals: publicSignals,
+      //     },
+      //     domainId: 42, // Optional domain ID for proof aggregation
+      //   }); // Execute the verification with the provided proof data
+
+      // Determine which circuit to use
+      const circuitType = proofData.circuitType || "tax" // Default to tax circuit if not specified
+      const selectedCircuit = CIRCUITS.find(c => c.key === circuitType)
+      if (!selectedCircuit) {
+        throw new Error("Invalid circuit type")
       }
-      return doc
-    })
 
-    setDocuments(updatedDocuments)
-    localStorage.setItem("zk-cargo-pass-documents", JSON.stringify(updatedDocuments))
+      const circuit = selectedCircuit.circuit as any
+      const backend = new UltraPlonkBackend(circuit.bytecode)
+
+      const proofBytes = new Uint8Array(proofData.proof.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || [])
+
+      const timestampNumeric = Math.floor(new Date(proofData.timestamp).getTime() / 1000).toString()
+
+      const proofDataForVerification = {
+        proof: proofBytes,
+        publicInputs: [proofData.documentId, timestampNumeric, address]
+      }
+
+      const isValid = await backend.verifyProof(proofDataForVerification)
+
+      setValidationResult({
+        valid: isValid,
+        message: isValid ? "Proof is valid" : "Proof is invalid"
+      })
+
+      if (isValid) {
+        toast({
+          title: "Success",
+          description: "Proof validated successfully",
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: "Proof validation failed",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Error validating proof:', error)
+      setError("Failed to validate proof")
+      toast({
+        title: "Error",
+        description: "Failed to validate proof",
+        variant: "destructive"
+      })
+    } finally {
+      setValidating(false)
+    }
+  }
+
+  const handleToggleStatus = async (docId: string) => {
+    try {
+      const doc = documents.find(d => d.id === docId)
+      if (!doc) return
+
+      const newStatus = doc.status === "verified" ? "pending" : "verified"
+      
+      await api.patch(`/document/${docId}`, {
+        status: newStatus
+      })
+
+      const updatedDocuments = documents.map((doc) => {
+        if (doc.id === docId) {
+          if (searchResult && searchResult.id === docId) {
+            setSearchResult({
+              ...searchResult,
+              status: newStatus,
+            })
+          }
+
+          toast({
+            title: newStatus === "verified" ? translations.validate.success.validated : translations.validate.success.markedPending,
+            description: `${doc.name} has been ${newStatus === "verified" ? "validated" : "marked as pending"}.`,
+          })
+
+          return {
+            ...doc,
+            status: newStatus,
+          }
+        }
+        return doc
+      })
+
+      setDocuments(updatedDocuments)
+    } catch (error) {
+      console.error('Error updating document status:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update document status",
+        variant: "destructive"
+      })
+    }
   }
 
   return (
@@ -133,6 +282,8 @@ export default function ValidatePage() {
       <div className="flex justify-end p-4">
         <button onClick={() => setLanguage('en-US')} className={`px-4 py-2 ${language === 'en-US' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>EN</button>
         <button onClick={() => setLanguage('pt-BR')} className={`px-4 py-2 ${language === 'pt-BR' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>PT</button>
+        <div className="flex justify-end p-4"></div>
+        <WalletConnect />
       </div>
 
       <div>
@@ -154,32 +305,76 @@ export default function ValidatePage() {
             </Alert>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="hash">{translations.validate.documentHash}</Label>
-            <div className="flex gap-2">
-              <Input
-                id="hash"
-                placeholder={translations.validate.enterHash}
-                value={searchHash}
-                onChange={(e) => setSearchHash(e.target.value)}
-              />
-              <Button
-                onClick={handleSearch}
-                disabled={searching || !searchHash.trim()}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {searching ? (
-                  <>
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                    {translations.validate.searching}
-                  </>
-                ) : (
-                  <>
-                    <Search className="mr-2 h-4 w-4" />
-                    {translations.validate.verify}
-                  </>
-                )}
-              </Button>
+          {validationResult && (
+            <Alert variant={validationResult.valid ? "default" : "destructive"}>
+              {validationResult.valid ? (
+                <CheckCircle className="h-4 w-4" />
+              ) : (
+                <AlertCircle className="h-4 w-4" />
+              )}
+              <AlertTitle>{validationResult.valid ? "Success" : "Error"}</AlertTitle>
+              <AlertDescription>{validationResult.message}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="proof-file">Upload Proof File</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="proof-file"
+                  type="file"
+                  accept=".json"
+                  onChange={handleProofFileChange}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={handleValidateProof}
+                  disabled={!proofFile || validating || !isConnected}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {validating ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                      Validating...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Validate Proof
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hash">{translations.validate.documentHash}</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="hash"
+                  placeholder={translations.validate.enterHash}
+                  value={searchHash}
+                  onChange={(e) => setSearchHash(e.target.value)}
+                />
+                <Button
+                  onClick={handleSearch}
+                  disabled={searching || !searchHash.trim()}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {searching ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                      {translations.validate.searching}
+                    </>
+                  ) : (
+                    <>
+                      <Search className="mr-2 h-4 w-4" />
+                      {translations.validate.verify}
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -227,17 +422,6 @@ export default function ValidatePage() {
                       </code>
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <Label htmlFor="validate-toggle" className="cursor-pointer">
-                      {translations.validate.markAsVerified}
-                    </Label>
-                    <Switch
-                      id="validate-toggle"
-                      checked={searchResult.status === "verified"}
-                      onCheckedChange={() => handleToggleStatus(searchResult.id)}
-                    />
-                  </div>
                 </div>
               </div>
             </div>
@@ -263,8 +447,8 @@ export default function ValidatePage() {
               </TableHeader>
               <TableBody>
                 {documents
-                  .filter((doc) => doc.id) // Only show documents with a hash
-                  .slice(0, 5) // Show only the 5 most recent
+                  .filter((doc) => doc.id)
+                  .slice(0, 5)
                   .map((doc) => (
                     <TableRow key={doc.id}>
                       <TableCell>
