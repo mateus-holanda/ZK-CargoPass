@@ -10,15 +10,22 @@ import { FileText, Lock, AlertCircle, CheckCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import enUS from '../../i18n/locales/en-US.json'
 import ptBR from '../../i18n/locales/pt-BR.json'
+import { Noir } from "@noir-lang/noir_js";
+import { UltraPlonkBackend } from "@aztec/bb.js";
+import TaxCircuit from "../../../circuits/tax_validation/tax_validation.json";
+import DateCircuit from "../../../circuits/date_validation/date_validation.json";
+import CargoCircuit from "../../../circuits/cargo_validation/cargo_validation.json";
 
 interface Document {
   id: string
   name: string
+  status: string
   type: string
   size: number
-  uploadDate: string
-  status: string
-  hash: string | null
+  data: any
+  createdAt: string
+  deletedAt: string | null
+  userId: string
 }
 
 export default function GenerateZKPPage() {
@@ -65,25 +72,44 @@ export default function GenerateZKPPage() {
     setError("")
 
     try {
-      // Simulate processing delay
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      // Find the selected document
       const selectedDocument = documents.find((doc) => doc.id === selectedDocumentId)
       if (!selectedDocument) {
         throw new Error(translations.generateZKP.error)
       }
 
-      // Generate a hash for the document (simulating ZKP)
-      const hash = await generateHash(selectedDocument.name + Date.now())
+      // 1. Load the circuit
+      const circuit = TaxCircuit
 
-      // Update the document in localStorage
+      // 2. Prepare Noir and Barretenberg
+      const noir = new Noir(circuit);
+      const backend = new UltraPlonkBackend(circuit.bytecode);
+
+      // 3. Prepare inputs for the circuit
+      // This depends on your circuit's main function signature!
+      // Example: { doc_hash: ..., ... }
+      const inputs = {
+        // e.g., doc_hash: hash(selectedDocument.data)
+        // or pass the document data directly if your circuit expects it
+        doc_data: selectedDocument.data,
+      };
+
+      // 4. Generate the witness
+      const { witness } = await noir.execute(inputs);
+
+      // 5. Generate the proof
+      const proof = await backend.generateProof(witness);
+
+      // 6. Store the proof (as hex or base64)
+      const proofHex = Array.from(new Uint8Array(proof.proof))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+
       const storedDocuments = JSON.parse(localStorage.getItem("zk-cargo-pass-documents") || "[]")
       const updatedDocuments = storedDocuments.map((doc: Document) => {
         if (doc.id === selectedDocumentId) {
           return {
             ...doc,
-            hash,
+            hash: proofHex,
             status: "verified",
           }
         }
@@ -106,20 +132,16 @@ export default function GenerateZKPPage() {
       stats.zkProofsGenerated += 1
       localStorage.setItem("zk-cargo-pass-stats", JSON.stringify(stats))
 
-      // Remove the processed document from the list
       setDocuments(documents.filter((doc) => doc.id !== selectedDocumentId))
       setSelectedDocumentId("")
 
       setSuccess(true)
       toast({
         title: translations.generateZKP.success,
-        description: `Hash: ${hash.substring(0, 10)}...${hash.substring(hash.length - 6)}`,
+        description: `Proof: ${proofHex.substring(0, 10)}...${proofHex.substring(proofHex.length - 6)}`,
       })
 
-      // Reset success state after 3 seconds
-      setTimeout(() => {
-        setSuccess(false)
-      }, 3000)
+      setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
       console.error(err)
       setError(translations.generateZKP.error)
