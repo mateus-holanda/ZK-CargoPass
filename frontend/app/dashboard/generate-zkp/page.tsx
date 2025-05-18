@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { FileText, Lock, AlertCircle, CheckCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import enUS from '../../i18n/locales/en-US.json'
+import ptBR from '../../i18n/locales/pt-BR.json'
 
 interface Document {
   id: string
@@ -25,6 +27,8 @@ export default function GenerateZKPPage() {
   const [generating, setGenerating] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
+  const [language, setLanguage] = useState(localStorage.getItem("zk-cargo-pass-language") || "en-US")
+  const translations = language === 'en-US' ? enUS : ptBR
   const { toast } = useToast()
 
   useEffect(() => {
@@ -37,6 +41,10 @@ export default function GenerateZKPPage() {
       setDocuments(pendingDocuments)
     }
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem("zk-cargo-pass-language", language)
+  }, [language])
 
   const generateHash = async (text: string) => {
     // Use Web Crypto API to generate SHA-256 hash
@@ -53,7 +61,7 @@ export default function GenerateZKPPage() {
 
   const handleGenerateZKP = async () => {
     if (!selectedDocumentId) {
-      setError("Please select a document")
+      setError(translations.generateZKP.error)
       return
     }
 
@@ -67,7 +75,7 @@ export default function GenerateZKPPage() {
       // Find the selected document
       const selectedDocument = documents.find((doc) => doc.id === selectedDocumentId)
       if (!selectedDocument) {
-        throw new Error("Document not found")
+        throw new Error(translations.generateZKP.error)
       }
 
       // Generate a hash for the document (simulating ZKP)
@@ -108,7 +116,7 @@ export default function GenerateZKPPage() {
 
       setSuccess(true)
       toast({
-        title: "ZK Proof generated successfully",
+        title: translations.generateZKP.success,
         description: `Hash: ${hash.substring(0, 10)}...${hash.substring(hash.length - 6)}`,
       })
 
@@ -118,7 +126,7 @@ export default function GenerateZKPPage() {
       }, 3000)
     } catch (err) {
       console.error(err)
-      setError("An error occurred while generating the ZK Proof")
+      setError(translations.generateZKP.error)
     } finally {
       setGenerating(false)
     }
@@ -126,15 +134,20 @@ export default function GenerateZKPPage() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end p-4">
+        <button onClick={() => setLanguage('en-US')} className={`px-4 py-2 ${language === 'en-US' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>EN</button>
+        <button onClick={() => setLanguage('pt-BR')} className={`px-4 py-2 ${language === 'pt-BR' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>PT</button>
+      </div>
+
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Generate ZK Proof</h1>
-        <p className="text-gray-500">Create zero-knowledge proofs for your documents</p>
+        <h1 className="text-3xl font-bold tracking-tight">{translations.generateZKP.title}</h1>
+        <p className="text-gray-500">{translations.generateZKP.subtitle}</p>
       </div>
 
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>Generate ZK Proof</CardTitle>
-          <CardDescription>Select a document to generate a zero-knowledge proof</CardDescription>
+          <CardTitle>{translations.generateZKP.cardTitle}</CardTitle>
+          <CardDescription>{translations.generateZKP.cardDescription}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
@@ -149,15 +162,15 @@ export default function GenerateZKPPage() {
             <Alert className="bg-green-50 text-green-800 border-green-200">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertTitle>Success</AlertTitle>
-              <AlertDescription>ZK Proof generated and stored on the blockchain!</AlertDescription>
+              <AlertDescription>{translations.generateZKP.success}</AlertDescription>
             </Alert>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="document">Select Document</Label>
+            <Label htmlFor="document">{translations.generateZKP.selectDocument}</Label>
             <Select value={selectedDocumentId} onValueChange={setSelectedDocumentId} disabled={generating || success}>
               <SelectTrigger id="document">
-                <SelectValue placeholder="Select a document" />
+                <SelectValue placeholder={translations.generateZKP.selectPlaceholder} />
               </SelectTrigger>
               <SelectContent>
                 {documents.length > 0 ? (
@@ -168,7 +181,7 @@ export default function GenerateZKPPage() {
                   ))
                 ) : (
                   <SelectItem value="no-docs" disabled>
-                    No pending documents
+                    {translations.generateZKP.noDocuments}
                   </SelectItem>
                 )}
               </SelectContent>
@@ -206,12 +219,12 @@ export default function GenerateZKPPage() {
             {generating ? (
               <>
                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                Generating...
+                {translations.generateZKP.generating}
               </>
             ) : (
               <>
                 <Lock className="mr-2 h-4 w-4" />
-                Generate ZK Proof
+                {translations.generateZKP.cardTitle}
               </>
             )}
           </Button>
@@ -220,28 +233,18 @@ export default function GenerateZKPPage() {
 
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>About Zero-Knowledge Proofs</CardTitle>
-          <CardDescription>How zkCargoPass uses zero-knowledge proofs for secure verification</CardDescription>
+          <CardTitle>{translations.generateZKP.aboutTitle}</CardTitle>
+          <CardDescription>{translations.generateZKP.aboutDescription}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4 text-sm">
-            <p>
-              Zero-knowledge proofs allow one party (the prover) to prove to another party (the verifier) that a
-              statement is true without revealing any additional information.
-            </p>
-            <p>
-              In zkCargoPass, we use ZK proofs to verify that your customs documentation is valid and compliant without
-              revealing sensitive business information.
-            </p>
-            <p>
-              The generated proof is stored on the Ethereum blockchain, providing an immutable record that can be
-              verified by customs officials without compromising data privacy.
-            </p>
+            <p>{translations.generateZKP.aboutText1}</p>
+            <p>{translations.generateZKP.aboutText2}</p>
+            <p>{translations.generateZKP.aboutText3}</p>
             <div className="flex items-center gap-2 p-3 bg-gray-100 rounded-md">
               <Lock className="h-5 w-5 text-green-600 flex-shrink-0" />
               <p className="text-xs">
-                <strong>Security Note:</strong> Our ZK proofs use state-of-the-art cryptography to ensure that your data
-                remains private while still being verifiable by authorized parties.
+                <strong>{translations.generateZKP.securityNote}</strong>
               </p>
             </div>
           </div>
