@@ -19,6 +19,8 @@ async function bootstrap() {
     origin: [config.get('ui.baseUrl')],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    exposedHeaders: ['Set-Cookie'],
   })
 
   // Enable class interceptor and validation pipe

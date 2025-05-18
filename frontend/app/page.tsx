@@ -6,22 +6,41 @@ import { Button } from "@/components/ui/button"
 import { useEffect, useState } from 'react';
 import enUS from './i18n/locales/en-US.json';
 import ptBR from './i18n/locales/pt-BR.json';
+import { WalletConnect } from "@/components/ui/wallet-connect";
 
 export default function LandingPage() {
-  const [language, setLanguage] = useState(localStorage.getItem("zk-cargo-pass-language") || "en-US");
+  const [language, setLanguage] = useState("en-US");
   const translations = language === 'en-US' ? enUS : ptBR;
-
+  
   useEffect(() => {
-    localStorage.setItem("zk-cargo-pass-language", language)
-  }, [language])
+    if (typeof window !== 'undefined') {
+      const savedLanguage = localStorage.getItem("zk-cargo-pass-language");
+      if (savedLanguage) setLanguage(savedLanguage);
+      localStorage.setItem("zk-cargo-pass-language", language);
+    }
+  }, [language]);
+
+  const toggleLanguage = (lang: string) => setLanguage(lang);
+  const isActiveLang = (lang: string) => language === lang;
 
   return (
     <div className="flex flex-col min-h-screen">
       <div className="flex justify-end p-4">
-        <button onClick={() => setLanguage('en-US')} className={`px-4 py-2 ${language === 'en-US' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>EN</button>
-        <button onClick={() => setLanguage('pt-BR')} className={`px-4 py-2 ${language === 'pt-BR' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>PT</button>
+        <button 
+          onClick={() => toggleLanguage('en-US')} 
+          className={`px-4 py-2 ${isActiveLang('en-US') ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+        >
+          EN
+        </button>
+        <button 
+          onClick={() => toggleLanguage('pt-BR')} 
+          className={`px-4 py-2 ${isActiveLang('pt-BR') ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+        >
+          PT
+        </button>
+        <div className="flex justify-end p-4" />
+        <WalletConnect />
       </div>
-      {/* Hero Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-b from-white to-gray-50">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center space-y-4 text-center">
@@ -49,7 +68,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Benefits Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-white">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center space-y-4 text-center">
@@ -92,7 +110,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How It Works Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-50">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center space-y-4 text-center">
@@ -135,7 +152,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Tech Stack Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-white">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center space-y-4 text-center">
@@ -163,7 +179,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-green-50">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center space-y-4 text-center">
@@ -186,7 +201,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="w-full py-6 bg-gray-800 text-white">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
