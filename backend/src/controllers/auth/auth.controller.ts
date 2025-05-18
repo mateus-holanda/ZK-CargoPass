@@ -19,7 +19,6 @@ export interface RequestWithSession extends Request {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  /** Email + Password authentication */
   @Post('login')
   @ApiOperation({ summary: 'User authentication using email + password' })
   @ApiOkResponse({ type: SessionEntity })
@@ -29,7 +28,6 @@ export class AuthController {
     return session
   }
 
-  /** Logout */
   @Post('logout')
   @AuthLogout()
   @ApiOperation({ summary: 'Revokes the current session' })

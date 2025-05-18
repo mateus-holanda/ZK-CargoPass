@@ -75,7 +75,7 @@
     "supportedFormats": "Supported file formats: pdf",
     "selectFile": "Select File",
     "uploadButton": "Upload Document",
-    "uploading": "Uploading...",
+    "uploading": "Uploading and analyzing...",
     "success": "Document uploaded successfully!",
     "guidelines": {
       "title": "Upload Guidelines",
@@ -133,7 +133,9 @@
     "noDocumentsDescription": "There are no documents with generated proofs that need validation.",
     "error": {
       "enterHash": "Please enter a hash to search",
-      "notFound": "No document found with the provided hash"
+      "notFound": "No document found with the provided hash",
+      "fetchError": "Failed to fetch documents",
+      "searchError": "Failed to search document"
     },
     "success": {
       "validated": "Document validated",

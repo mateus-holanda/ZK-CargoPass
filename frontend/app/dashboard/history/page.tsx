@@ -4,10 +4,12 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Lock, CheckCircle, Clock, Search } from "lucide-react"
+import { FileText, Lock, CheckCircle, Clock, Search, AlertCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import enUS from '../../i18n/locales/en-US.json'
 import ptBR from '../../i18n/locales/pt-BR.json'
+import { api } from "@/lib/axios"
+import { WalletConnect } from "@/components/ui/wallet-connect"
 
 interface Document {
   id: string
@@ -26,16 +28,38 @@ export default function HistoryPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([])
   const [language, setLanguage] = useState(localStorage.getItem("zk-cargo-pass-language") || "en-US")
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState("")
   const translations = language === 'en-US' ? enUS : ptBR
 
   useEffect(() => {
-    // Load documents from localStorage
-    const storedDocuments = localStorage.getItem("zk-cargo-pass-documents")
-    if (storedDocuments) {
-      const parsedDocuments = JSON.parse(storedDocuments)
-      setDocuments(parsedDocuments)
-      setFilteredDocuments(parsedDocuments)
+    const fetchDocuments = async () => {
+      try {
+        setIsLoading(true)
+        const userId = localStorage.getItem("zk-cargo-pass-user-id")
+        const sessionId = localStorage.getItem('zk-cargo-pass-session-id')
+        
+        if (sessionId) {
+          api.defaults.headers.common['Cookie'] = `auth.sessionId=${sessionId}`
+        }
+
+        const response = await api.get('/document', {
+          params: {
+            userId: userId
+          }
+        })
+        
+        setDocuments(response.data)
+        setFilteredDocuments(response.data)
+      } catch (err) {
+        console.error('Error fetching documents:', err)
+        setError("Failed to load documents. Please try again later.")
+      } finally {
+        setIsLoading(false)
+      }
     }
+
+    fetchDocuments()
   }, [])
 
   useEffect(() => {
@@ -88,6 +112,8 @@ export default function HistoryPage() {
       <div className="flex justify-end p-4">
         <button onClick={() => setLanguage('en-US')} className={`px-4 py-2 ${language === 'en-US' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>EN</button>
         <button onClick={() => setLanguage('pt-BR')} className={`px-4 py-2 ${language === 'pt-BR' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>PT</button>
+        <div className="flex justify-end p-4"></div>
+        <WalletConnect />
       </div>
 
       <div>
@@ -110,7 +136,21 @@ export default function HistoryPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredDocuments.length > 0 ? (
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-4">
+                <Clock className="h-6 w-6 text-gray-400 animate-spin" />
+              </div>
+              <h3 className="text-lg font-medium">Loading documents...</h3>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
+                <AlertCircle className="h-6 w-6 text-red-500" />
+              </div>
+              <h3 className="text-lg font-medium text-red-500">{error}</h3>
+            </div>
+          ) : filteredDocuments.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>

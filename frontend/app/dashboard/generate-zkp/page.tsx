@@ -6,15 +6,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { FileText, Lock, AlertCircle, CheckCircle } from "lucide-react"
+import { FileText, Lock, AlertCircle, CheckCircle, Download } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import enUS from '../../i18n/locales/en-US.json'
 import ptBR from '../../i18n/locales/pt-BR.json'
 import { Noir } from "@noir-lang/noir_js";
 import { UltraPlonkBackend } from "@aztec/bb.js";
-import TaxCircuit from "../../../circuits/tax_validation/tax_validation.json";
-import DateCircuit from "../../../circuits/date_validation/date_validation.json";
-import CargoCircuit from "../../../circuits/cargo_validation/cargo_validation.json";
+import TaxCircuit from "../../../../circuits/tax_validation/target/tax_validation.json"
+import DateCircuit from "../../../../circuits/date_validation/target/date_validation.json"
+import CargoCircuit from "../../../../circuits/cargo_validation/target/cargo_validation.json"
+import { Textarea } from "@/components/ui/textarea"
+import { WalletConnect } from "@/components/ui/wallet-connect"
 
 interface Document {
   id: string
@@ -28,15 +30,52 @@ interface Document {
   userId: string
 }
 
+// Circuit metadata and input mapping
+const CIRCUITS = [
+  {
+    key: "tax",
+    label: "Tax Validation",
+    circuit: TaxCircuit,
+    // Map document data to circuit input
+    getInputs: (doc: Document) => ({
+      total_declared_value: doc.data?.financial?.total_declared_value || 0,
+      amount_paid: doc.data?.financial?.amount_paid || 0,
+      tax_percentage: doc.data?.financial?.tax_percentage || 0,
+    }),
+  },
+  {
+    key: "date",
+    label: "Date Validation",
+    circuit: DateCircuit,
+    getInputs: (doc: Document) => ({
+      issue_date: doc.data?.date?.issue_date || 0,
+      current_date: doc.data?.date?.current_date || 0,
+      max_days_diff: doc.data?.date?.max_days_diff || 0,
+    }),
+  },
+  {
+    key: "cargo",
+    label: "Cargo Validation",
+    circuit: CargoCircuit,
+    getInputs: (doc: Document) => ({
+      unity_value: doc.data?.cargo?.unity_value || 0,
+      quantity: doc.data?.cargo?.quantity || 0,
+      total_declared_value: doc.data?.cargo?.total_declared_value || 0,
+    }),
+  },
+]
+
 export default function GenerateZKPPage() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [selectedDocumentId, setSelectedDocumentId] = useState<string>("")
   const [generating, setGenerating] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
+  const [generatedProof, setGeneratedProof] = useState<string>("")
   const [language, setLanguage] = useState(localStorage.getItem("zk-cargo-pass-language") || "en-US")
   const translations = language === 'en-US' ? enUS : ptBR
   const { toast } = useToast()
+  const [selectedCircuitKey, setSelectedCircuitKey] = useState<string>(CIRCUITS[0].key)
 
   useEffect(() => {
     const storedDocuments = localStorage.getItem("zk-cargo-pass-documents")
@@ -67,43 +106,31 @@ export default function GenerateZKPPage() {
       setError(translations.generateZKP.error)
       return
     }
-
     setGenerating(true)
     setError("")
-
     try {
       const selectedDocument = documents.find((doc) => doc.id === selectedDocumentId)
       if (!selectedDocument) {
         throw new Error(translations.generateZKP.error)
       }
-
-      // 1. Load the circuit
-      const circuit = TaxCircuit
-
-      // 2. Prepare Noir and Barretenberg
-      const noir = new Noir(circuit);
-      const backend = new UltraPlonkBackend(circuit.bytecode);
-
-      // 3. Prepare inputs for the circuit
-      // This depends on your circuit's main function signature!
-      // Example: { doc_hash: ..., ... }
-      const inputs = {
-        // e.g., doc_hash: hash(selectedDocument.data)
-        // or pass the document data directly if your circuit expects it
-        doc_data: selectedDocument.data,
-      };
-
-      // 4. Generate the witness
-      const { witness } = await noir.execute(inputs);
-
-      // 5. Generate the proof
-      const proof = await backend.generateProof(witness);
-
-      // 6. Store the proof (as hex or base64)
+      // Get selected circuit
+      const selectedCircuit = CIRCUITS.find(c => c.key === selectedCircuitKey)
+      if (!selectedCircuit) {
+        throw new Error("Circuit not found")
+      }
+      const circuit = selectedCircuit.circuit as any
+      const noir = new Noir(circuit)
+      const backend = new UltraPlonkBackend(circuit.bytecode)
+      // Prepare inputs for the circuit
+      const inputs = selectedCircuit.getInputs(selectedDocument)
+      // Generate the witness
+      const { witness } = await noir.execute(inputs)
+      // Generate the proof
+      const proof = await backend.generateProof(witness)
       const proofHex = Array.from(new Uint8Array(proof.proof))
         .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-
+        .join("")
+      setGeneratedProof(proofHex)
       const storedDocuments = JSON.parse(localStorage.getItem("zk-cargo-pass-documents") || "[]")
       const updatedDocuments = storedDocuments.map((doc: Document) => {
         if (doc.id === selectedDocumentId) {
@@ -115,9 +142,7 @@ export default function GenerateZKPPage() {
         }
         return doc
       })
-
       localStorage.setItem("zk-cargo-pass-documents", JSON.stringify(updatedDocuments))
-
       // Update stats
       const storedStats = localStorage.getItem("zk-cargo-pass-stats")
       const stats = storedStats
@@ -128,33 +153,51 @@ export default function GenerateZKPPage() {
             validatedSubmissions: 0,
             pendingSubmissions: 0,
           }
-
       stats.zkProofsGenerated += 1
       localStorage.setItem("zk-cargo-pass-stats", JSON.stringify(stats))
-
       setDocuments(documents.filter((doc) => doc.id !== selectedDocumentId))
       setSelectedDocumentId("")
-
       setSuccess(true)
       toast({
         title: translations.generateZKP.success,
         description: `Proof: ${proofHex.substring(0, 10)}...${proofHex.substring(proofHex.length - 6)}`,
       })
-
-      setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
       console.error(err)
       setError(translations.generateZKP.error)
+      setGeneratedProof("")
     } finally {
       setGenerating(false)
     }
   }
+
+  const handleDownloadProof = () => {
+    if (!generatedProof) return;
+    
+    const proofData = {
+      proof: generatedProof,
+      timestamp: new Date().toISOString(),
+      documentId: selectedDocumentId
+    };
+
+    const blob = new Blob([JSON.stringify(proofData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zk-proof-${selectedDocumentId}-${new Date().getTime()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-end p-4">
         <button onClick={() => setLanguage('en-US')} className={`px-4 py-2 ${language === 'en-US' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>EN</button>
         <button onClick={() => setLanguage('pt-BR')} className={`px-4 py-2 ${language === 'pt-BR' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>PT</button>
+        <div className="flex justify-end p-4"></div>
+        <WalletConnect />
       </div>
 
       <div>
@@ -183,6 +226,42 @@ export default function GenerateZKPPage() {
               <AlertDescription>{translations.generateZKP.success}</AlertDescription>
             </Alert>
           )}
+
+          {generatedProof && (
+            <div className="space-y-4">
+              <Label>Generated Proof</Label>
+              <Textarea
+                value={generatedProof}
+                readOnly
+                className="font-mono text-sm"
+                rows={4}
+              />
+              <Button
+                onClick={handleDownloadProof}
+                variant="outline"
+                className="w-full"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download Proof
+              </Button>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="circuit">Select Circuit</Label>
+            <Select value={selectedCircuitKey} onValueChange={setSelectedCircuitKey} disabled={generating || success}>
+              <SelectTrigger id="circuit">
+                <SelectValue placeholder="Select a circuit" />
+              </SelectTrigger>
+              <SelectContent>
+                {CIRCUITS.map((circuit) => (
+                  <SelectItem key={circuit.key} value={circuit.key}>
+                    {circuit.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="document">{translations.generateZKP.selectDocument}</Label>
@@ -218,7 +297,7 @@ export default function GenerateZKPPage() {
                         <p className="font-medium">{doc.name}</p>
                         <p className="text-xs text-gray-500">
                           {(doc.size / 1024).toFixed(2)} KB • Uploaded on{" "}
-                          {new Date(doc.uploadDate).toLocaleDateString()}
+                          {new Date(doc.createdAt).toLocaleDateString()}
                         </p>
                       </>
                     ) : null

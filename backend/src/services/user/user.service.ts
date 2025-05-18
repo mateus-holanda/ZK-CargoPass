@@ -11,13 +11,8 @@ export class UserService {
   ) {}
 
   public async signUp(data: SignUpDto) {
-    // Get user by email
     let user = await this.getUserByEmail(data.email)
-
-    // Converts a raw password to an encrypted one and insert it in the database
     const { password, salt } = this.encryptPassword(data.password)
-
-    // If user doesn't exist, create the new user
     if (!user) {
       user = await this.prismaService.user.create({
         data: {
@@ -45,7 +40,6 @@ export class UserService {
   private encryptPassword(rawPassword: string) {
     const salt = encryptMD5(`salt-${Math.random()}-${Date.now()}`)
     const password = encryptSHA256(rawPassword, salt)
-
     return { salt, password }
   }
 }
