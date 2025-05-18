@@ -7,6 +7,7 @@ import { AuthMiddleware } from "./middlewares/auth.middleware"
 import { GrantMiddleware } from "./middlewares/grant.middleware"
 import { JsonBodyMiddleware } from "./middlewares/json-body.middleware"
 import { configLoader } from "./utils/config-loader"
+import { DocumentControllerModule } from "./controllers/document/document-controller.module"
 
 const CONFIG_FILE = join(__dirname, '../config/config.yml')
 
@@ -15,6 +16,7 @@ const CONFIG_FILE = join(__dirname, '../config/config.yml')
     ConfigModule.forRoot({ load: [configLoader(CONFIG_FILE)], isGlobal: true }),
     AuthControllerModule,
     UserControllerModule,
+    DocumentControllerModule,
   ],
   controllers: [],
   providers: [ConfigService, Logger],
