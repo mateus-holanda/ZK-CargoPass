@@ -24,11 +24,9 @@ export class SessionSerializer extends PassportSerializer {
     payload: SessionData,
     done: (err: Error | null, payload?: SessionEntity) => void,
   ): void {
-    // if payload does not contain the userId then return null as the user
     if (!payload.userId) {
       return done(null, null)
     }
-    // retrieve the user session object from the database
     this.authService
       .retrieveSession(payload.userId)
       .then((session) => {
@@ -36,7 +34,6 @@ export class SessionSerializer extends PassportSerializer {
       })
       .catch((err) => {
         console.error(err)
-        // if unauthorized then return null as the user
         if (err instanceof UnauthorizedException) {
           return done(null, null)
         }

@@ -15,7 +15,7 @@ const CONFIG_FILE = join(__dirname, '../config/config.yml')
   imports: [
     ConfigModule.forRoot({ load: [configLoader(CONFIG_FILE)], isGlobal: true }),
     AuthControllerModule,
-    UserControllerModule,
+    // UserControllerModule,
     DocumentControllerModule,
   ],
   controllers: [],
