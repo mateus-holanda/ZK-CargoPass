@@ -1,0 +1,6 @@
+[package]
+name = "cargo_validation"
+type = "bin"
+authors = ["Mateus Holanda"]
+
+[dependencies]
