@@ -46,7 +46,7 @@
     "securityNote": "Nota de Segurança: Nossas provas ZK usam criptografia de última geração para garantir que seus dados permaneçam privados enquanto ainda são verificáveis por partes autorizadas."
   },
   "viewHistory": "Ver Histórico",
-  "validateSubmission": "Validar Submissão",
+  "validateSubmission": "Validar",
   "howItWorks": "Como Funciona",
   "howItWorksDescription": "Um processo simples de três etapas para revolucionar o desembaraço aduaneiro.",
   "step1Title": "1. Enviar",
@@ -111,7 +111,7 @@
     "customsText": "Verifique a autenticidade do documento verificando o hash contra o registro na blockchain. Sem necessidade de acessar ou armazenar informações comerciais sensíveis."
   },
   "validate": {
-    "title": "Validação Manual",
+    "title": "Validação",
     "subtitle": "Verifique a autenticidade do documento e atualize o status",
     "verifyDocument": "Verificar Documento",
     "verifyDescription": "Digite um hash de documento para verificar sua autenticidade",

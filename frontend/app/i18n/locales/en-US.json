@@ -16,7 +16,7 @@
   "user": "User",
   "documentsUploaded": "Documents Uploaded",
   "zkProofsGenerated": "ZK Proofs Generated",
-  "validatedSubmissions": "Validated Submissions",
+  "validatedSubmissions": "Validated",
   "pendingSubmissions": "Pending Submissions",
   "recentActivity": "Recent Activity",
   "recentActions": "Your recent actions in the system",
@@ -46,7 +46,7 @@
     "securityNote": "Security Note: Our ZK proofs use state-of-the-art cryptography to ensure that your data remains private while still being verifiable by authorized parties."
   },
   "viewHistory": "View History",
-  "validateSubmission": "Validate Submission",
+  "validateSubmission": "Validate",
   "howItWorks": "How It Works",
   "howItWorksDescription": "A simple three-step process to revolutionize customs clearance.",
   "step1Title": "1. Upload",
@@ -111,7 +111,7 @@
   },
   "logout": "Logout",
   "validate": {
-    "title": "Manual Validation",
+    "title": "Validation",
     "subtitle": "Verify document authenticity and update status",
     "verifyDocument": "Verify Document",
     "verifyDescription": "Enter a document hash to verify its authenticity",
