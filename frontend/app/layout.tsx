@@ -2,7 +2,6 @@ import type { ReactNode } from "react"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Inter } from "next/font/google"
 import "../styles/globals.css"
-import { getBrowserLanguage } from "@/lib/utils"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -20,10 +19,9 @@ export default async function RootLayout({
 }: {
   children: ReactNode
 }) {
-  const lang = getBrowserLanguage();
   
   return (
-    <html lang={lang} suppressHydrationWarning>
+    <html suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           {children}
