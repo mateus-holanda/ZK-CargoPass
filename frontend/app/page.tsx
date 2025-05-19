@@ -10,6 +10,7 @@ import { WalletConnect } from "@/components/ui/wallet-connect";
 
 export default function LandingPage() {
   const [language, setLanguage] = useState("pt-BR");
+  
   const translations = language === 'en-US' ? enUS : ptBR;
   
   useEffect(() => {
