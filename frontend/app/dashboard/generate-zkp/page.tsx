@@ -12,9 +12,9 @@ import enUS from '../../i18n/locales/en-US.json'
 import ptBR from '../../i18n/locales/pt-BR.json'
 import { Noir } from "@noir-lang/noir_js";
 import { UltraPlonkBackend } from "@aztec/bb.js";
-import TaxCircuit from "../../../../circuits/tax_validation/target/tax_validation.json"
-import DateCircuit from "../../../../circuits/date_validation/target/date_validation.json"
-import CargoCircuit from "../../../../circuits/cargo_validation/target/cargo_validation.json"
+import TaxCircuit from "../../../circuits/tax_validation/target/tax_validation.json"
+import DateCircuit from "../../../circuits/date_validation/target/date_validation.json"
+import CargoCircuit from "../../../circuits/cargo_validation/target/cargo_validation.json"
 import { Textarea } from "@/components/ui/textarea"
 import { WalletConnect } from "@/components/ui/wallet-connect"
 
