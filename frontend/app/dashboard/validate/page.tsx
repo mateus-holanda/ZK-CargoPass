@@ -18,9 +18,9 @@ import { WalletConnect } from "@/components/ui/wallet-connect"
 import { useWeb3 } from "@/hooks/useWeb3"
 import { Noir } from "@noir-lang/noir_js"
 import { UltraPlonkBackend } from "@aztec/bb.js"
-import TaxCircuit from "../../../../circuits/tax_validation/target/tax_validation.json"
-import DateCircuit from "../../../../circuits/date_validation/target/date_validation.json"
-import CargoCircuit from "../../../../circuits/cargo_validation/target/cargo_validation.json"
+import TaxCircuit from "../../../circuits/tax_validation/target/tax_validation.json"
+import DateCircuit from "../../../circuits/date_validation/target/date_validation.json"
+import CargoCircuit from "../../../circuits/cargo_validation/target/cargo_validation.json"
 // import { zkVerifySession, CurveType, Library } from 'zkverifyjs';
 
 const CIRCUITS = [
@@ -138,8 +138,16 @@ export default function ValidatePage() {
   const handleProofFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
+      if (file.type !== 'application/json') {
+        setError("Please select a valid JSON file")
+        setProofFile(null)
+        return
+      }
       setProofFile(file)
       setValidationResult(null)
+      setError("")
+    } else {
+      setProofFile(null)
     }
   }
 
@@ -159,49 +167,41 @@ export default function ValidatePage() {
     setValidationResult(null)
 
     try {
-      // let session = await zkVerifySession.start().Volta().withWallet({
-      //   accountAddress: address,
-      //   source: "wallet"
-      // });                           
-
       const proofText = await proofFile.text()
-      const proofData: ProofData = JSON.parse(proofText)
-      // const vkey = proofData.verification_key;
+      let proofData: ProofData
 
-      // const { events, transactionResult } = await session
-      //   .verify() // Optionally provide account address to verify("myaddress") if connected with multple accounts
-      //   .ultraplonk() // Select the proof type (e.g., ultraplonk)
-      //   .nonce(1) // Set the nonce (optional)
-      //   .withRegisteredVk() // Indicate that the verification key is already registered (optional)
-      //   .execute({
-      //     proofData: {
-      //       vk: vkey,
-      //       proof: proofData.proof,
-      //       publicSignals: publicSignals,
-      //     },
-      //     domainId: 42, // Optional domain ID for proof aggregation
-      //   }); // Execute the verification with the provided proof data
+      try {
+        proofData = JSON.parse(proofText)
+      } catch (e) {
+        throw new Error("Invalid JSON format in proof file")
+      }
 
-      // Determine which circuit to use
       const circuitType = proofData.circuitType || "tax" // Default to tax circuit if not specified
       const selectedCircuit = CIRCUITS.find(c => c.key === circuitType)
       if (!selectedCircuit) {
-        throw new Error("Invalid circuit type")
+        throw new Error(`Invalid circuit type: ${circuitType}`)
       }
 
       const circuit = selectedCircuit.circuit as any
+      const noir = new Noir(circuit)
       const backend = new UltraPlonkBackend(circuit.bytecode)
 
+      // Convert hex proof to bytes
       const proofBytes = new Uint8Array(proofData.proof.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || [])
+      if (proofBytes.length === 0) {
+        throw new Error("Invalid proof format")
+      }
 
       const timestampNumeric = Math.floor(new Date(proofData.timestamp).getTime() / 1000).toString()
 
-      const proofDataForVerification = {
+      // Create verification data
+      const verificationData = {
         proof: proofBytes,
         publicInputs: [proofData.documentId, timestampNumeric, address]
       }
 
-      const isValid = await backend.verifyProof(proofDataForVerification)
+      // Verify the proof using the backend
+      const isValid = await backend.verifyProof(verificationData)
 
       setValidationResult({
         valid: isValid,
@@ -222,10 +222,10 @@ export default function ValidatePage() {
       }
     } catch (error) {
       console.error('Error validating proof:', error)
-      setError("Failed to validate proof")
+      setError(error instanceof Error ? error.message : "Failed to validate proof")
       toast({
         title: "Error",
-        description: "Failed to validate proof",
+        description: error instanceof Error ? error.message : "Failed to validate proof",
         variant: "destructive"
       })
     } finally {
@@ -347,35 +347,6 @@ export default function ValidatePage() {
                 </Button>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="hash">{translations.validate.documentHash}</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="hash"
-                  placeholder={translations.validate.enterHash}
-                  value={searchHash}
-                  onChange={(e) => setSearchHash(e.target.value)}
-                />
-                <Button
-                  onClick={handleSearch}
-                  disabled={searching || !searchHash.trim()}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {searching ? (
-                    <>
-                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                      {translations.validate.searching}
-                    </>
-                  ) : (
-                    <>
-                      <Search className="mr-2 h-4 w-4" />
-                      {translations.validate.verify}
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
           </div>
 
           {searchResult && (
@@ -442,7 +413,6 @@ export default function ValidatePage() {
                   <TableHead>{translations.validate.document}</TableHead>
                   <TableHead>{translations.validate.uploadDate}</TableHead>
                   <TableHead>{translations.validate.status}</TableHead>
-                  <TableHead>{translations.validate.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -468,15 +438,6 @@ export default function ValidatePage() {
                         >
                           {doc.status === "verified" ? "Verified" : "Pending"}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <Switch
-                            id={`toggle-${doc.id}`}
-                            checked={doc.status === "verified"}
-                            onCheckedChange={() => handleToggleStatus(doc.id)}
-                          />
-                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

@@ -18,7 +18,7 @@ export default function LandingPage() {
       if (savedLanguage) setLanguage(savedLanguage);
       localStorage.setItem("zk-cargo-pass-language", language);
     }
-  }, [language]);
+  }, []);
 
   const toggleLanguage = (lang: string) => setLanguage(lang);
   const isActiveLang = (lang: string) => language === lang;

@@ -187,13 +187,12 @@ export async function POST(request: NextRequest) {
     }
 
     const file = validationResult.data;
-    
-    // Analyze document
     const analysis = await analyzeWithAI(file.data);
+
+    body.data = { id: new Date().getTime().toString(), verifier: "zk-cargo-pass" };
     
-    // Forward to backend with proper headers
     await api.post(`${process.env.NEXT_PUBLIC_API_URL}/document`, 
-      { ...file, data: analysis },
+      { ...body },
       {
         headers: {
           'Content-Type': 'application/json',

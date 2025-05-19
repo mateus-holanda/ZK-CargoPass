@@ -34,7 +34,6 @@ export function DashboardSidebar() {
 
   const menuItems = [
     { title: translations.dashboardTitle, icon: Home, href: "/dashboard" },
-    { title: translations.uploadDocument, icon: FileText, href: "/dashboard/upload" },
     { title: translations.generateZKP.title, icon: Lock, href: "/dashboard/generate-zkp" },
     { title: translations.viewHistory, icon: History, href: "/dashboard/history" },
     { title: translations.validateSubmission, icon: CheckCircle, href: "/dashboard/validate" },
