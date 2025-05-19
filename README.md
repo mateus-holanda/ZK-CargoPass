@@ -2,11 +2,11 @@
 
 ## Detalhes do Projeto
 
-ZK-CargoPass é uma aplicação descentralizada (dApp) projetada para otimizar o desembaraço aduaneiro no Porto de Santos. A solução emprega tecnologia blockchain e provas de conhecimento zero (Zk Proofs) para verificar a documentação das cargas sem expor dados sensíveis.
+zkCargoPass é uma aplicação descentralizada (dApp) projetada para otimizar o desembaraço aduaneiro no Porto de Santos. A solução emprega tecnologia blockchain, inteligência artificial para automatizar processos, e provas de conhecimento zero (Zk Proofs) para verificar a documentação das cargas sem expor dados sensíveis.
 
 ## Exposição do Problema
 
-Atualmente, cargas permanecem paradas por longos períodos em contêineres, levando a ineficiências e custos adicionais para pessoas físicas e jurídicas devido ao aluguel do espaço no porto. A ZK-CargoPass aborda essa questão adotando uma solução segura, privada e eficiente.
+Atualmente, cargas permanecem paradas no porto por burocracia e processos manuais, acarretando prejuízos e custos de milhares de dolares por dia. A zkCargoPass aborda essa questão adotando uma solução segura, privada e eficiente.
 
 ## Tecnologias Utilizadas
 
