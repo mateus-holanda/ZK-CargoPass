@@ -1,10 +1,14 @@
-FROM node:22-alpine
+FROM node:22-slim
 
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
 
 COPY . .
+
+RUN apt-get update && apt-get install -y openssl
+
+RUN npm install
 
 RUN npm run build
 
